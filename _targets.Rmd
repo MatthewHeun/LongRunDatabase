@@ -46,12 +46,19 @@ a.k.a., a magic spreadsheet.
 
 ```{targets ruvy_df, tar_simple = TRUE}
 iron_steel |> 
-  dplyr::group_by(Year, Country, Matrix) |> 
+  dplyr::group_by(Year, Country, Energy.type, Matrix) |> 
   matsindf::collapse_to_matrices(matnames = "Matrix", 
                                  rownames = "From", 
                                  colnames = "To",
                                  matvals = "Value") |> 
-  tidyr::pivot_wider(names_from = "Matrix", values_from = "Value")
+  tidyr::pivot_wider(names_from = "Matrix", values_from = "Value") |> 
+  # Set row and column types
+  dplyr::mutate(
+    R = R |> matsbyname::setrowtype("Industry") |> matsbyname::setcoltype("Product"), 
+    U = U |> matsbyname::setrowtype("Product") |> matsbyname::setrowtype("Industry"), 
+    V = V |> matsbyname::setrowtype("Industry") |> matsbyname::setcoltype("Product"), 
+    Y = Y |> matsbyname::setrowtype("Product") |> matsbyname::setrowtype("Industry")
+  )
 ```
 
 # Pipeline
@@ -70,10 +77,24 @@ Retrieve results from the `_targets/` data store using `tar_read()` or `tar_load
 df <- tar_read(ruvy_df)
 ```
 
-View some of the matrices.
+Look at some of the matrices.
 
+The resource matrix (**R**) contains exogenous inputs to the energy conversion chain.
+Imports can als be included here.
 ```{r}
 df$R[[1]]
+```
+
+The use matrix (**U**) contains all uses of energy by transformation
+industries in the economy.
+
+
+The final demand matrix (**Y**) shows sectoral uses of energy.
+If we had more than the "Iron and steel" sector,
+the **Y** matrix would contain additional columns.
+
+```{r}
+df$Y[[2]]
 ```
 
 The `targets` dependency graph shows the steps of the calculation pipeline.

@@ -5687,12 +5687,19 @@ read_data &lt;- function(.path, sheet) {
 magic spreadsheet.</p>
 <pre class="r"><code>tar_target(ruvy_df, {
   iron_steel |&gt; 
-    dplyr::group_by(Year, Country, Matrix) |&gt; 
+    dplyr::group_by(Year, Country, Energy.type, Matrix) |&gt; 
     matsindf::collapse_to_matrices(matnames = &quot;Matrix&quot;, 
                                    rownames = &quot;From&quot;, 
                                    colnames = &quot;To&quot;,
                                    matvals = &quot;Value&quot;) |&gt; 
-    tidyr::pivot_wider(names_from = &quot;Matrix&quot;, values_from = &quot;Value&quot;)
+    tidyr::pivot_wider(names_from = &quot;Matrix&quot;, values_from = &quot;Value&quot;) |&gt; 
+    # Set row and column types
+    dplyr::mutate(
+      R = R |&gt; matsbyname::setrowtype(&quot;Industry&quot;) |&gt; matsbyname::setcoltype(&quot;Product&quot;), 
+      U = U |&gt; matsbyname::setrowtype(&quot;Product&quot;) |&gt; matsbyname::setrowtype(&quot;Industry&quot;), 
+      V = V |&gt; matsbyname::setrowtype(&quot;Industry&quot;) |&gt; matsbyname::setcoltype(&quot;Product&quot;), 
+      Y = Y |&gt; matsbyname::setrowtype(&quot;Product&quot;) |&gt; matsbyname::setrowtype(&quot;Industry&quot;)
+    )
 })
 #&gt; Define target ruvy_df from chunk code.
 #&gt; Establish _targets.R and _targets_r/targets/ruvy_df.R.</code></pre>
@@ -5702,18 +5709,19 @@ magic spreadsheet.</p>
 <p>If you ran all the <code>{targets}</code> chunks in non-interactive
 mode, then your R scripts are set up to run the pipeline.</p>
 <pre class="r"><code>tar_make()
-#&gt; • start target iron_steel
-#&gt; • built target iron_steel [0.11 seconds]
+#&gt; ✔ skip target iron_steel
 #&gt; • start target ruvy_df
-#&gt; • built target ruvy_df [0.116 seconds]
-#&gt; • end pipeline [0.283 seconds]</code></pre>
+#&gt; • built target ruvy_df [0.131 seconds]
+#&gt; • end pipeline [0.275 seconds]</code></pre>
 </div>
 <div id="output" class="section level1">
 <h1>Output</h1>
 <p>Retrieve results from the <code>_targets/</code> data store using
 <code>tar_read()</code> or <code>tar_load()</code>.</p>
 <pre class="r"><code>df &lt;- tar_read(ruvy_df)</code></pre>
-<p>View some of the matrices.</p>
+<p>Look at some of the matrices.</p>
+<p>The resource matrix (<strong>R</strong>) contains exogenous inputs to
+the energy conversion chain. Imports can als be included here.</p>
 <pre class="r"><code>df$R[[1]]
 #&gt;                              Coal &amp; Coal products [from Resources]
 #&gt; Resources [of Biofuels]                                        0.0
@@ -5813,12 +5821,29 @@ mode, then your R scripts are set up to run the pipeline.</p>
 #&gt; Resources [of Oil]                          0.0000
 #&gt; Resources [of Solar PV]                     0.0000
 #&gt; Resources [of Solar Thermal]                0.0000
-#&gt; Resources [of Wind]                       571.2088</code></pre>
+#&gt; Resources [of Wind]                       571.2088
+#&gt; attr(,&quot;rowtype&quot;)
+#&gt; [1] &quot;Industry&quot;
+#&gt; attr(,&quot;coltype&quot;)
+#&gt; [1] &quot;Product&quot;</code></pre>
+<p>The use matrix (<strong>U</strong>) contains all uses of energy by
+transformation industries in the economy.</p>
+<p>The final demand matrix (<strong>Y</strong>) shows sectoral uses of
+energy. If we had more than the “Iron and steel” sector, the
+<strong>Y</strong> matrix would contain additional columns.</p>
+<pre class="r"><code>df$Y[[2]]
+#&gt;           Iron and steel
+#&gt; HTH.600.C    81737.53724
+#&gt; IP              51.83652
+#&gt; L             1423.48384
+#&gt; LTC.20.C      1085.88515
+#&gt; attr(,&quot;rowtype&quot;)
+#&gt; [1] &quot;Industry&quot;</code></pre>
 <p>The <code>targets</code> dependency graph shows the steps of the
 calculation pipeline.</p>
 <pre class="r"><code>tar_visnetwork()</code></pre>
-<div class="visNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-ec1ded3e7c032d7dbc4c" style="width:672px;height:480px;"></div>
-<script type="application/json" data-for="htmlwidget-ec1ded3e7c032d7dbc4c">{"x":{"nodes":{"name":["iron_steel","ruvy_df","read_data"],"type":["stem","stem","function"],"status":["uptodate","uptodate","uptodate"],"seconds":[0.11,0.116,null],"bytes":[1457,1934,null],"branches":[null,null,null],"label":["iron_steel","ruvy_df","read_data"],"color":["#354823","#354823","#354823"],"id":["iron_steel","ruvy_df","read_data"],"level":[2,3,1],"shape":["dot","dot","triangle"]},"edges":{"from":["iron_steel","read_data"],"to":["ruvy_df","iron_steel"],"arrows":["to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Stem","Function"],"color":["#354823","#899DA4","#899DA4"],"shape":["dot","dot","triangle"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<div class="visNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-4451943e01153a67f0cb" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-4451943e01153a67f0cb">{"x":{"nodes":{"name":["iron_steel","ruvy_df","read_data"],"type":["stem","stem","function"],"status":["uptodate","uptodate","uptodate"],"seconds":[0.111,0.131,null],"bytes":[1477,1986,null],"branches":[null,null,null],"label":["iron_steel","ruvy_df","read_data"],"color":["#354823","#354823","#354823"],"id":["iron_steel","ruvy_df","read_data"],"level":[2,3,1],"shape":["dot","dot","triangle"]},"edges":{"from":["iron_steel","read_data"],"to":["ruvy_df","iron_steel"],"arrows":["to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Stem","Function"],"color":["#354823","#899DA4","#899DA4"],"shape":["dot","dot","triangle"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 <p>At this point, you can go back and run <code>{targets}</code> chunks
 in interactive mode without interfering with the code or data of the
 non-interactive pipeline.</p>
