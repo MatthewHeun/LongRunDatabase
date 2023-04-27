@@ -25,7 +25,7 @@ Define global options and functions.
 
 ```{targets example-globals, tar_globals = TRUE}
 options(tidyverse.quiet = TRUE)
-tar_option_set(packages = c("dplyr", "ggplot2", "readxl", "tidyr", "matsindf"))
+tar_option_set(packages = c("dplyr", "ggplot2", "readxl", "tidyr", "matsindf", "Recca"))
 
 read_data <- function(.path, sheet) {
   .path |> 
@@ -50,7 +50,8 @@ iron_steel |>
   matsindf::collapse_to_matrices(matnames = "Matrix", 
                                  rownames = "From", 
                                  colnames = "To",
-                                 matvals = "Value") |> 
+                                 matvals = "Value",
+                                 matrix.class = "matrix") |> 
   tidyr::pivot_wider(names_from = "Matrix", values_from = "Value") |> 
   # Set row and column types
   dplyr::mutate(
@@ -69,38 +70,112 @@ If you ran all the `{targets}` chunks in non-interactive mode, then your R scrip
 tar_make()
 ```
 
-# Output
-
-Retrieve results from the `_targets/` data store using `tar_read()` or `tar_load()`.
-
-```{r, message = FALSE}
-df <- tar_read(ruvy_df)
-```
-
-Look at some of the matrices.
-
-The resource matrix (**R**) contains exogenous inputs to the energy conversion chain.
-Imports can als be included here.
-```{r}
-df$R[[1]]
-```
-
-The use matrix (**U**) contains all uses of energy by transformation
-industries in the economy.
-
-
-The final demand matrix (**Y**) shows sectoral uses of energy.
-If we had more than the "Iron and steel" sector,
-the **Y** matrix would contain additional columns.
-
-```{r}
-df$Y[[2]]
-```
-
 The `targets` dependency graph shows the steps of the calculation pipeline.
 
 ```{r}
 tar_visnetwork()
 ```
 
-At this point, you can go back and run `{targets}` chunks in interactive mode without interfering with the code or data of the non-interactive pipeline.
+
+# Output
+
+Retrieve results from the `_targets/` data store using `tar_read()`.
+
+```{r, message = FALSE}
+df <- tar_read(ruvy_df)
+df
+```
+
+Look at some of the matrices.
+
+The resource matrix (**R**) contains exogenous inputs to the energy conversion chain.
+Imports can also be included here for a single country.
+The next bit of code grabs the **R** matrix in the first row (2001).
+
+```{r}
+df$R[[1]]
+```
+
+The use matrix (**U**) contains all uses of energy by transformation
+industries in the economy.
+The next bit of code grabs the **U** matrix in the second row (2011).
+
+```{r}
+df$U[[2]]
+```
+
+The make matrix (**V**) contains all uses of energy by transformation
+industries in the economy.
+The next bit of code grabs the **V** matrix in the first row (2001).
+
+```{r}
+df$V[[1]]
+```
+
+The final demand matrix (**Y**) shows sectoral uses of energy.
+If we had more than the "Iron and steel" sector,
+the **Y** matrix would contain additional columns.
+The next bit of code grabs the **Y** matrix in the second row (2011).
+
+```{r}
+df$Y[[2]]
+```
+
+
+We can check whether the matrices exhibit energy balance.
+
+```{r}
+df |> 
+  Recca::verify_SUT_energy_balance() |> 
+  dplyr::select(Country, Year, .SUT_energy_balance)
+```
+
+We can visualize with Sankey diagrams. 
+This code makes a Sankey diagram from each row of the data frame.
+
+```{r}
+sankeys <- df |> 
+  Recca::make_sankey()
+sankeys
+```
+
+Here is the Sankey diagram for the first row (2001).
+
+```{r}
+sankeys |> 
+  dplyr::filter(Year == 2001) |> 
+  magrittr::extract2("Sankey") |> 
+  magrittr::extract2(1)
+```
+
+Here is the Sankey diagram for the second row (2011).
+
+```{r}
+sankeys |> 
+  dplyr::filter(Year == 2011) |> 
+  magrittr::extract2("Sankey") |> 
+  magrittr::extract2(1)
+```
+
+
+
+
+# Questions and comments
+
+(1) There is "Energy industry own use" of "Gross electricity". 
+    Which part of the energy industry uses that electricity?
+    We will want to route that electricity consumption
+    to the actual machine.
+(2) We need to synchronize the various "XXX - plant" machine names
+    with the names of similar devices in the short run database.
+(3) What is meant by "Electronics (if no detail)"? 
+    To my knowledge, 
+    that machine name is not present in the short run database.
+(4) I think we'll need to sort out "Wind", "Wind [from Resources]", 
+    "Wind - Turbine", and "Main activity producer electricty plants".
+    I think we're using those terms differently in the short run database.
+(5) In particular "Wind - Turbine" making "Wind" doesn't seem right.
+(6) The "Losses" node seems wrong, as evidenced by the Sankey diagram. 
+    We need to figure that out.
+
+    

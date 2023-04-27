@@ -4,7 +4,8 @@ tar_target(ruvy_df, {
     matsindf::collapse_to_matrices(matnames = "Matrix", 
                                    rownames = "From", 
                                    colnames = "To",
-                                   matvals = "Value") |> 
+                                   matvals = "Value",
+                                   matrix.class = "matrix") |> 
     tidyr::pivot_wider(names_from = "Matrix", values_from = "Value") |> 
     # Set row and column types
     dplyr::mutate(
