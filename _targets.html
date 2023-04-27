@@ -5696,9 +5696,9 @@ magic spreadsheet.</p>
     # Set row and column types
     dplyr::mutate(
       R = R |&gt; matsbyname::setrowtype(&quot;Industry&quot;) |&gt; matsbyname::setcoltype(&quot;Product&quot;), 
-      U = U |&gt; matsbyname::setrowtype(&quot;Product&quot;) |&gt; matsbyname::setrowtype(&quot;Industry&quot;), 
+      U = U |&gt; matsbyname::setrowtype(&quot;Product&quot;) |&gt; matsbyname::setcoltype(&quot;Industry&quot;), 
       V = V |&gt; matsbyname::setrowtype(&quot;Industry&quot;) |&gt; matsbyname::setcoltype(&quot;Product&quot;), 
-      Y = Y |&gt; matsbyname::setrowtype(&quot;Product&quot;) |&gt; matsbyname::setrowtype(&quot;Industry&quot;)
+      Y = Y |&gt; matsbyname::setrowtype(&quot;Product&quot;) |&gt; matsbyname::setcoltype(&quot;Industry&quot;)
     )
 })
 #&gt; Define target ruvy_df from chunk code.
@@ -5710,9 +5710,8 @@ magic spreadsheet.</p>
 mode, then your R scripts are set up to run the pipeline.</p>
 <pre class="r"><code>tar_make()
 #&gt; ✔ skip target iron_steel
-#&gt; • start target ruvy_df
-#&gt; • built target ruvy_df [0.131 seconds]
-#&gt; • end pipeline [0.275 seconds]</code></pre>
+#&gt; ✔ skip target ruvy_df
+#&gt; ✔ skip pipeline [0.034 seconds]</code></pre>
 </div>
 <div id="output" class="section level1">
 <h1>Output</h1>
@@ -5838,12 +5837,14 @@ energy. If we had more than the “Iron and steel” sector, the
 #&gt; L             1423.48384
 #&gt; LTC.20.C      1085.88515
 #&gt; attr(,&quot;rowtype&quot;)
+#&gt; [1] &quot;Product&quot;
+#&gt; attr(,&quot;coltype&quot;)
 #&gt; [1] &quot;Industry&quot;</code></pre>
 <p>The <code>targets</code> dependency graph shows the steps of the
 calculation pipeline.</p>
 <pre class="r"><code>tar_visnetwork()</code></pre>
-<div class="visNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-4451943e01153a67f0cb" style="width:672px;height:480px;"></div>
-<script type="application/json" data-for="htmlwidget-4451943e01153a67f0cb">{"x":{"nodes":{"name":["iron_steel","ruvy_df","read_data"],"type":["stem","stem","function"],"status":["uptodate","uptodate","uptodate"],"seconds":[0.111,0.131,null],"bytes":[1477,1986,null],"branches":[null,null,null],"label":["iron_steel","ruvy_df","read_data"],"color":["#354823","#354823","#354823"],"id":["iron_steel","ruvy_df","read_data"],"level":[2,3,1],"shape":["dot","dot","triangle"]},"edges":{"from":["iron_steel","read_data"],"to":["ruvy_df","iron_steel"],"arrows":["to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Stem","Function"],"color":["#354823","#899DA4","#899DA4"],"shape":["dot","dot","triangle"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<div class="visNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-fa1aefcf7b7c2d5b2ea5" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-fa1aefcf7b7c2d5b2ea5">{"x":{"nodes":{"name":["iron_steel","ruvy_df","read_data"],"type":["stem","stem","function"],"status":["uptodate","uptodate","uptodate"],"seconds":[0.111,0.128,null],"bytes":[1477,1998,null],"branches":[null,null,null],"label":["iron_steel","ruvy_df","read_data"],"color":["#354823","#354823","#354823"],"id":["iron_steel","ruvy_df","read_data"],"level":[2,3,1],"shape":["dot","dot","triangle"]},"edges":{"from":["iron_steel","read_data"],"to":["ruvy_df","iron_steel"],"arrows":["to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Stem","Function"],"color":["#354823","#899DA4","#899DA4"],"shape":["dot","dot","triangle"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 <p>At this point, you can go back and run <code>{targets}</code> chunks
 in interactive mode without interfering with the code or data of the
 non-interactive pipeline.</p>

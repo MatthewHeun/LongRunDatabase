@@ -9,8 +9,8 @@ tar_target(ruvy_df, {
     # Set row and column types
     dplyr::mutate(
       R = R |> matsbyname::setrowtype("Industry") |> matsbyname::setcoltype("Product"), 
-      U = U |> matsbyname::setrowtype("Product") |> matsbyname::setrowtype("Industry"), 
+      U = U |> matsbyname::setrowtype("Product") |> matsbyname::setcoltype("Industry"), 
       V = V |> matsbyname::setrowtype("Industry") |> matsbyname::setcoltype("Product"), 
-      Y = Y |> matsbyname::setrowtype("Product") |> matsbyname::setrowtype("Industry")
+      Y = Y |> matsbyname::setrowtype("Product") |> matsbyname::setcoltype("Industry")
     )
 })
