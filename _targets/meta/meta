@@ -1,0 +1,6 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+create_plot|function|9a9f266c80d6a25e|||||||||||||||
+data|stem|28fe80ca175cafe6|173ca52d67e263fa|bbe0331ce719fac3|1588979285||t19474.630800643s|4bd2df2f3e23065a|1079|rds|local|vector|||0.01||
+fit|stem|d85172b6696642ac|adde9736c1e10981|4f49463fc20ec13d|1780184594||t19474.6308008179s|b8431078dd598537|1574|rds|local|vector|||0.003||
+hist|stem|7fc41200a6e58bc0|68877181ab74e51e|92fed7335cfbedfc|-1026346201||t19474.6308013317s|ae932fcbbf52d79e|48943|rds|local|vector|||0.015||
+raw_data|stem|e3a3750c1a25fad4|81e4f6e420278630|a1d7102420575b1a|-979620141||t19474.6307999123s|e28f169d68df9326|1261|rds|local|vector|||1.321||
