@@ -158,6 +158,11 @@ sankeys |>
 ```
 
 
+# Analysis
+
+We can run all types of analyses after the data are in the RUVY format.
+For example, this code calculates the efficiency of all Industries.
+I'll leave that for another time.
 
 
 # Questions and comments
