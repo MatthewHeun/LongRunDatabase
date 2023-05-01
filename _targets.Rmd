@@ -235,7 +235,7 @@ energy transformation industries.
     To my knowledge, 
     that machine name is not present in the short run database.
 (4) I think we'll need to sort out "Wind", "Wind [from Resources]", 
-    "Wind - Turbine", and "Main activity producer electricty plants".
+    "Wind - Turbine", and "Main activity producer electricity plants".
     I think we're using those terms differently in the short run database.
 (5) In particular "Wind - Turbine" making "Wind" doesn't seem right.
 (6) The "Losses" node seems wrong, as evidenced by the Sankey diagram. 
