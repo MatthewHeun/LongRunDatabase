@@ -45,6 +45,31 @@ read_data("data/Iron_Steel_data_US_2011_2001.xlsx", sheet = "Iron and steel")
 
 Process the data into a `matsindf` data frame, 
 a.k.a., a magic spreadsheet.
+First step is to make S_units vectors.
+
+```{targets s_units, tar_simple = TRUE} 
+iron_steel |> 
+  dplyr::mutate(
+    # Create a "Product" as expected when creating the S_units matrix.
+    "{IEATools::iea_cols$product}" := dplyr::case_when(
+      .data[["Matrix"]] %in% c("R", "V") ~ .data[["To"]], 
+      .data[["Matrix"]] %in% c("U", "Y") ~ .data[["From"]], 
+      TRUE ~ NA_character_
+    ), 
+    # Create a "Flow" as expected when creating the S_units matrix.
+    "{IEATools::iea_cols$flow}" := dplyr::case_when(
+      .data[["Matrix"]] %in% c("R", "V") ~ .data[["From"]], 
+      .data[["Matrix"]] %in% c("U", "Y") ~ .data[["To"]], 
+      TRUE ~ NA_character_
+    ), 
+    # Eliminate unneeded columns.
+    From = NULL, 
+    To = NULL, 
+    Matrix = NULL
+  ) |> 
+  # Now make the S_units vectors
+  IEATools::extract_S_units_from_tidy(matnames = "Matrix", e_dot = "Value")
+```
 
 ```{targets ruvy_df, tar_simple = TRUE}
 iron_steel |> 
@@ -55,14 +80,18 @@ iron_steel |>
                                  matvals = "Value",
                                  matrix.class = "matrix") |> 
   tidyr::pivot_wider(names_from = "Matrix", values_from = "Value") |> 
-  # Set row and column types
   dplyr::mutate(
+    # Set row and column types
     R = R |> matsbyname::setrowtype("Industry") |> matsbyname::setcoltype("Product"), 
     U = U |> matsbyname::setrowtype("Product") |> matsbyname::setcoltype("Industry"), 
     V = V |> matsbyname::setrowtype("Industry") |> matsbyname::setcoltype("Product"), 
     Y = Y |> matsbyname::setrowtype("Product") |> matsbyname::setcoltype("Industry")
-  )
+  ) |> 
+  # Join with the S_units matrices
+  dplyr::left_join(s_units)
 ```
+
+
 
 # Pipeline
 
@@ -164,7 +193,34 @@ sankeys |>
 
 We can run all types of analyses after the data are in the RUVY format.
 For example, this code calculates the efficiency of all Industries.
-I'll leave that for another time.
+
+```{r}
+eta_i <- df |>
+  Recca::calc_eta_i()
+```
+
+The **eta_i** vectors contain efficiencies for each processing stage (Industry) 
+in the energy conversion chain.
+Here are the efficiencies for 2001.
+
+```{r}
+eta_i$eta_i[[1]]
+```
+
+And here are the efficiencies for 2011.
+
+```{r}
+eta_i$eta_i[[2]]
+```
+
+Note that the code to calculate efficiencies applies to the `df` data frame.
+Thus, the same code works for any number of rows in the data frame.
+I.e., the same code works for any number of countries and years.
+
+Furthermore, the code to calculate efficiencies applies to the **U** and **V** matrices,
+regardless of their size. 
+So, the same code works if we have more energy carriers or more 
+energy transformation industries.
 
 
 # Questions and comments
@@ -184,5 +240,12 @@ I'll leave that for another time.
 (5) In particular "Wind - Turbine" making "Wind" doesn't seem right.
 (6) The "Losses" node seems wrong, as evidenced by the Sankey diagram. 
     We need to figure that out.
+(7) Efficiencies are a bit weird. 
+    "Losses" acts as an industry, which it should not be.
+    "Gas extraction" and "Oil extraction" have an efficiencies of `0`, which is surprising.
+    Several other Industries have efficiency of `1`, which needs to be investigated.
+(8) The efficiency calculation is a good diagnostic.
+    When we see problems with efficiency results, that indicates
+    that we have not yet specified the matrices correctly.
 
     
