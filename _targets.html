@@ -11,7 +11,7 @@
 
 <meta name="author" content="Matthew Kuperus Heun" />
 
-<meta name="date" content="2023-04-27" />
+<meta name="date" content="2023-06-27" />
 
 <title>Long run database test</title>
 
@@ -6321,7 +6321,7 @@ display: none;
 
 <h1 class="title toc-ignore">Long run database test</h1>
 <h4 class="author">Matthew Kuperus Heun</h4>
-<h4 class="date">27 Apr 2023</h4>
+<h4 class="date">27 June 2023</h4>
 
 </div>
 
@@ -6380,6 +6380,7 @@ magic spreadsheet. First step is to make S_units vectors.</p>
 })
 #&gt; Define target s_units from chunk code.
 #&gt; Establish _targets.R and _targets_r/targets/s_units.R.</code></pre>
+<p>Then create RUVY matrices in a data frame.</p>
 <pre class="r"><code>tar_target(ruvy_df, {
   iron_steel |&gt; 
     dplyr::group_by(Year, Country, Energy.type, Matrix) |&gt; 
@@ -6387,17 +6388,24 @@ magic spreadsheet. First step is to make S_units vectors.</p>
                                    rownames = &quot;From&quot;, 
                                    colnames = &quot;To&quot;,
                                    matvals = &quot;Value&quot;,
-                                   matrix.class = &quot;matrix&quot;) |&gt; 
+                                   matrix_class = &quot;matrix&quot;) |&gt; 
     tidyr::pivot_wider(names_from = &quot;Matrix&quot;, values_from = &quot;Value&quot;) |&gt; 
     dplyr::mutate(
       # Set row and column types
       R = R |&gt; matsbyname::setrowtype(&quot;Industry&quot;) |&gt; matsbyname::setcoltype(&quot;Product&quot;), 
       U = U |&gt; matsbyname::setrowtype(&quot;Product&quot;) |&gt; matsbyname::setcoltype(&quot;Industry&quot;), 
       V = V |&gt; matsbyname::setrowtype(&quot;Industry&quot;) |&gt; matsbyname::setcoltype(&quot;Product&quot;), 
-      Y = Y |&gt; matsbyname::setrowtype(&quot;Product&quot;) |&gt; matsbyname::setcoltype(&quot;Industry&quot;)
+      Y = Y |&gt; matsbyname::setrowtype(&quot;Product&quot;) |&gt; matsbyname::setcoltype(&quot;Industry&quot;), 
+      # Create other expected matrices
+      # The U_feed matrix is same as U
+      U_feed = U, 
+      # Create a U_EIOU matrix full of zeros but with same rows and columns as U
+      U_EIOU = matsbyname::hadamardproduct_byname(U, 0),
+      # Create an r_EIOU matrix, again full of zeroes
+      r_EIOU = U_EIOU
     ) |&gt; 
     # Join with the S_units matrices
-    dplyr::left_join(s_units)
+    dplyr::left_join(s_units, by = c(&quot;Year&quot;, &quot;Country&quot;, &quot;Energy.type&quot;))
 })
 #&gt; Define target ruvy_df from chunk code.
 #&gt; Establish _targets.R and _targets_r/targets/ruvy_df.R.</code></pre>
@@ -6407,19 +6415,15 @@ magic spreadsheet. First step is to make S_units vectors.</p>
 <p>If you ran all the <code>{targets}</code> chunks in non-interactive
 mode, then your R scripts are set up to run the pipeline.</p>
 <pre class="r"><code>tar_make()
-#&gt; • start target iron_steel
-#&gt; • built target iron_steel [0.115 seconds]
-#&gt; • start target s_units
-#&gt; • built target s_units [0.066 seconds]
-#&gt; • start target ruvy_df
-#&gt; Joining with `by = join_by(Year, Country, Energy.type)`
-#&gt; • built target ruvy_df [0.225 seconds]
-#&gt; • end pipeline [0.474 seconds]</code></pre>
+#&gt; ✔ skip target iron_steel
+#&gt; ✔ skip target s_units
+#&gt; ✔ skip target ruvy_df
+#&gt; ✔ skip pipeline [0.058 seconds]</code></pre>
 <p>The <code>targets</code> dependency graph shows the steps of the
 calculation pipeline.</p>
 <pre class="r"><code>tar_visnetwork()</code></pre>
-<div class="visNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-2be094a01d3514da2190" style="width:672px;height:480px;"></div>
-<script type="application/json" data-for="htmlwidget-2be094a01d3514da2190">{"x":{"nodes":{"name":["iron_steel","ruvy_df","s_units","read_data"],"type":["stem","stem","stem","function"],"status":["uptodate","uptodate","uptodate","uptodate"],"seconds":[0.115,0.225,0.066,null],"bytes":[1340,1928,544,null],"branches":[null,null,null,null],"label":["iron_steel","ruvy_df","s_units","read_data"],"color":["#354823","#354823","#354823","#354823"],"id":["iron_steel","ruvy_df","s_units","read_data"],"level":[2,4,3,1],"shape":["dot","dot","dot","triangle"]},"edges":{"from":["iron_steel","s_units","iron_steel","read_data"],"to":["ruvy_df","ruvy_df","s_units","iron_steel"],"arrows":["to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Stem","Function"],"color":["#354823","#899DA4","#899DA4"],"shape":["dot","dot","triangle"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<div class="visNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-72b5b09a7c55a4dedc98" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-72b5b09a7c55a4dedc98">{"x":{"nodes":{"name":["iron_steel","ruvy_df","s_units","read_data"],"type":["stem","stem","stem","function"],"status":["uptodate","uptodate","uptodate","uptodate"],"seconds":[0.213,0.326,0.136,null],"bytes":[1407,2244,548,null],"branches":[null,null,null,null],"label":["iron_steel","ruvy_df","s_units","read_data"],"color":["#354823","#354823","#354823","#354823"],"id":["iron_steel","ruvy_df","s_units","read_data"],"level":[2,4,3,1],"shape":["dot","dot","dot","triangle"]},"edges":{"from":["iron_steel","s_units","iron_steel","read_data"],"to":["ruvy_df","ruvy_df","s_units","iron_steel"],"arrows":["to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Stem","Function"],"color":["#354823","#899DA4","#899DA4"],"shape":["dot","dot","triangle"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="output" class="section level1">
 <h1>Output</h1>
@@ -6427,127 +6431,122 @@ calculation pipeline.</p>
 <code>tar_read()</code>.</p>
 <pre class="r"><code>df &lt;- tar_read(ruvy_df)
 df
-#&gt; # A tibble: 2 × 8
-#&gt;    Year Country Energy.type R               U        V        Y        S_units 
+#&gt; # A tibble: 2 × 11
+#&gt;    Year Country Energy.type R               U        V        Y        U_feed  
 #&gt;   &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;       &lt;list&gt;          &lt;list&gt;   &lt;list&gt;   &lt;list&gt;   &lt;list&gt;  
 #&gt; 1  2001 USA     E           &lt;dbl [10 × 10]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt;
-#&gt; 2  2011 USA     E           &lt;dbl [10 × 10]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt;</code></pre>
-<p>Look at some of the matrices.</p>
+#&gt; 2  2011 USA     E           &lt;dbl [10 × 10]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt;
+#&gt; # ℹ 3 more variables: U_EIOU &lt;list&gt;, r_EIOU &lt;list&gt;, S_units &lt;list&gt;</code></pre>
+<p>We can dump the matrices to an Excel file for further
+interrogation.</p>
+<pre class="r"><code>df |&gt; 
+  Recca::write_ecc_to_excel(&quot;~/Desktop/IronAndSteelRUVYMatrices.xlsx&quot;, 
+                            overwrite_file = TRUE)</code></pre>
+<p>Look at some of the matrices here.</p>
 <p>The resource matrix (<strong>R</strong>) contains exogenous inputs to
 the energy conversion chain. Imports can also be included here for a
 single country. The next bit of code grabs the <strong>R</strong> matrix
 in the first row (2001).</p>
 <pre class="r"><code>df$R[[1]]
-#&gt;                                     Coal &amp; coal products [from Resources]
-#&gt; Resources [of Biofuels]                                               0.0
-#&gt; Resources [of Coal &amp; coal products]                              472747.9
-#&gt; Resources [of Geothermal]                                             0.0
-#&gt; Resources [of Hydro]                                                  0.0
-#&gt; Resources [of Natural Gas]                                            0.0
-#&gt; Resources [of Nuclear]                                                0.0
-#&gt; Resources [of Oil &amp; oil products]                                     0.0
-#&gt; Resources [of Solar PV]                                               0.0
-#&gt; Resources [of Solar Thermal]                                          0.0
-#&gt; Resources [of Wind]                                                   0.0
-#&gt;                                     Geothermal [from Resources]
-#&gt; Resources [of Biofuels]                                    0.00
-#&gt; Resources [of Coal &amp; coal products]                        0.00
-#&gt; Resources [of Geothermal]                              12025.09
-#&gt; Resources [of Hydro]                                       0.00
-#&gt; Resources [of Natural Gas]                                 0.00
-#&gt; Resources [of Nuclear]                                     0.00
-#&gt; Resources [of Oil &amp; oil products]                          0.00
-#&gt; Resources [of Solar PV]                                    0.00
-#&gt; Resources [of Solar Thermal]                               0.00
-#&gt; Resources [of Wind]                                        0.00
-#&gt;                                     Hydro [from Resources]
-#&gt; Resources [of Biofuels]                               0.00
-#&gt; Resources [of Coal &amp; coal products]                   0.00
-#&gt; Resources [of Geothermal]                             0.00
-#&gt; Resources [of Hydro]                              15526.71
-#&gt; Resources [of Natural Gas]                            0.00
-#&gt; Resources [of Nuclear]                                0.00
-#&gt; Resources [of Oil &amp; oil products]                     0.00
-#&gt; Resources [of Solar PV]                               0.00
-#&gt; Resources [of Solar Thermal]                          0.00
-#&gt; Resources [of Wind]                                   0.00
-#&gt;                                     Natural gas [from Resources]
+#&gt;                              Coal &amp; Coal products [from Resources]
+#&gt; Resources [of Biofuels]                                        0.0
+#&gt; Resources [of Coal]                                       472747.9
+#&gt; Resources [of Crude Oil]                                       0.0
+#&gt; Resources [of Geothermal]                                      0.0
+#&gt; Resources [of Hydro]                                           0.0
+#&gt; Resources [of Natural Gas]                                     0.0
+#&gt; Resources [of Nuclear]                                         0.0
+#&gt; Resources [of Solar PV]                                        0.0
+#&gt; Resources [of Solar Thermal]                                   0.0
+#&gt; Resources [of Wind]                                            0.0
+#&gt;                              Geothermal [from Resources] Hydro [from Resources]
+#&gt; Resources [of Biofuels]                             0.00                   0.00
+#&gt; Resources [of Coal]                                 0.00                   0.00
+#&gt; Resources [of Crude Oil]                            0.00                   0.00
+#&gt; Resources [of Geothermal]                       12025.09                   0.00
+#&gt; Resources [of Hydro]                                0.00               15526.71
+#&gt; Resources [of Natural Gas]                          0.00                   0.00
+#&gt; Resources [of Nuclear]                              0.00                   0.00
+#&gt; Resources [of Solar PV]                             0.00                   0.00
+#&gt; Resources [of Solar Thermal]                        0.00                   0.00
+#&gt; Resources [of Wind]                                 0.00                   0.00
+#&gt;                              Natural gas [from Resources]
+#&gt; Resources [of Biofuels]                              0.00
+#&gt; Resources [of Coal]                                  0.00
+#&gt; Resources [of Crude Oil]                             0.00
+#&gt; Resources [of Geothermal]                            0.00
+#&gt; Resources [of Hydro]                                 0.00
+#&gt; Resources [of Natural Gas]                       94116.48
+#&gt; Resources [of Nuclear]                               0.00
+#&gt; Resources [of Solar PV]                              0.00
+#&gt; Resources [of Solar Thermal]                         0.00
+#&gt; Resources [of Wind]                                  0.00
+#&gt;                              Non-specified primary biofuels and waste [from Resources]
+#&gt; Resources [of Biofuels]                                                       8735.566
+#&gt; Resources [of Coal]                                                              0.000
+#&gt; Resources [of Crude Oil]                                                         0.000
+#&gt; Resources [of Geothermal]                                                        0.000
+#&gt; Resources [of Hydro]                                                             0.000
+#&gt; Resources [of Natural Gas]                                                       0.000
+#&gt; Resources [of Nuclear]                                                           0.000
+#&gt; Resources [of Solar PV]                                                          0.000
+#&gt; Resources [of Solar Thermal]                                                     0.000
+#&gt; Resources [of Wind]                                                              0.000
+#&gt;                              Nuclear [from Resources]
+#&gt; Resources [of Biofuels]                             0
+#&gt; Resources [of Coal]                                 0
+#&gt; Resources [of Crude Oil]                            0
+#&gt; Resources [of Geothermal]                           0
+#&gt; Resources [of Hydro]                                0
+#&gt; Resources [of Natural Gas]                          0
+#&gt; Resources [of Nuclear]                         201579
+#&gt; Resources [of Solar PV]                             0
+#&gt; Resources [of Solar Thermal]                        0
+#&gt; Resources [of Wind]                                 0
+#&gt;                              Oil &amp; oil products [from Resources]
 #&gt; Resources [of Biofuels]                                     0.00
-#&gt; Resources [of Coal &amp; coal products]                         0.00
+#&gt; Resources [of Coal]                                         0.00
+#&gt; Resources [of Crude Oil]                                27006.85
 #&gt; Resources [of Geothermal]                                   0.00
 #&gt; Resources [of Hydro]                                        0.00
-#&gt; Resources [of Natural Gas]                              94116.48
+#&gt; Resources [of Natural Gas]                                  0.00
 #&gt; Resources [of Nuclear]                                      0.00
-#&gt; Resources [of Oil &amp; oil products]                           0.00
 #&gt; Resources [of Solar PV]                                     0.00
 #&gt; Resources [of Solar Thermal]                                0.00
 #&gt; Resources [of Wind]                                         0.00
-#&gt;                                     Non-specified primary biofuels and waste [from Resources]
-#&gt; Resources [of Biofuels]                                                              8735.566
-#&gt; Resources [of Coal &amp; coal products]                                                     0.000
-#&gt; Resources [of Geothermal]                                                               0.000
-#&gt; Resources [of Hydro]                                                                    0.000
-#&gt; Resources [of Natural Gas]                                                              0.000
-#&gt; Resources [of Nuclear]                                                                  0.000
-#&gt; Resources [of Oil &amp; oil products]                                                       0.000
-#&gt; Resources [of Solar PV]                                                                 0.000
-#&gt; Resources [of Solar Thermal]                                                            0.000
-#&gt; Resources [of Wind]                                                                     0.000
-#&gt;                                     Nuclear [from Resources]
-#&gt; Resources [of Biofuels]                                    0
-#&gt; Resources [of Coal &amp; coal products]                        0
-#&gt; Resources [of Geothermal]                                  0
-#&gt; Resources [of Hydro]                                       0
-#&gt; Resources [of Natural Gas]                                 0
-#&gt; Resources [of Nuclear]                                201579
-#&gt; Resources [of Oil &amp; oil products]                          0
-#&gt; Resources [of Solar PV]                                    0
-#&gt; Resources [of Solar Thermal]                               0
-#&gt; Resources [of Wind]                                        0
-#&gt;                                     Oil &amp; oil products [from Resources]
-#&gt; Resources [of Biofuels]                                            0.00
-#&gt; Resources [of Coal &amp; coal products]                                0.00
-#&gt; Resources [of Geothermal]                                          0.00
-#&gt; Resources [of Hydro]                                               0.00
-#&gt; Resources [of Natural Gas]                                         0.00
-#&gt; Resources [of Nuclear]                                             0.00
-#&gt; Resources [of Oil &amp; oil products]                              27006.85
-#&gt; Resources [of Solar PV]                                            0.00
-#&gt; Resources [of Solar Thermal]                                       0.00
-#&gt; Resources [of Wind]                                                0.00
-#&gt;                                     Solar photovoltaics [from Resources]
-#&gt; Resources [of Biofuels]                                         0.000000
-#&gt; Resources [of Coal &amp; coal products]                             0.000000
-#&gt; Resources [of Geothermal]                                       0.000000
-#&gt; Resources [of Hydro]                                            0.000000
-#&gt; Resources [of Natural Gas]                                      0.000000
-#&gt; Resources [of Nuclear]                                          0.000000
-#&gt; Resources [of Oil &amp; oil products]                               0.000000
-#&gt; Resources [of Solar PV]                                         0.251827
-#&gt; Resources [of Solar Thermal]                                    0.000000
-#&gt; Resources [of Wind]                                             0.000000
-#&gt;                                     Solar thermal [from Resources]
-#&gt; Resources [of Biofuels]                                     0.0000
-#&gt; Resources [of Coal &amp; coal products]                         0.0000
-#&gt; Resources [of Geothermal]                                   0.0000
-#&gt; Resources [of Hydro]                                        0.0000
-#&gt; Resources [of Natural Gas]                                  0.0000
-#&gt; Resources [of Nuclear]                                      0.0000
-#&gt; Resources [of Oil &amp; oil products]                           0.0000
-#&gt; Resources [of Solar PV]                                     0.0000
-#&gt; Resources [of Solar Thermal]                              139.4591
-#&gt; Resources [of Wind]                                         0.0000
-#&gt;                                     Wind [from Resources]
-#&gt; Resources [of Biofuels]                            0.0000
-#&gt; Resources [of Coal &amp; coal products]                0.0000
-#&gt; Resources [of Geothermal]                          0.0000
-#&gt; Resources [of Hydro]                               0.0000
-#&gt; Resources [of Natural Gas]                         0.0000
-#&gt; Resources [of Nuclear]                             0.0000
-#&gt; Resources [of Oil &amp; oil products]                  0.0000
-#&gt; Resources [of Solar PV]                            0.0000
-#&gt; Resources [of Solar Thermal]                       0.0000
-#&gt; Resources [of Wind]                              571.2088
+#&gt;                              Solar PV [from Resources]
+#&gt; Resources [of Biofuels]                       0.000000
+#&gt; Resources [of Coal]                           0.000000
+#&gt; Resources [of Crude Oil]                      0.000000
+#&gt; Resources [of Geothermal]                     0.000000
+#&gt; Resources [of Hydro]                          0.000000
+#&gt; Resources [of Natural Gas]                    0.000000
+#&gt; Resources [of Nuclear]                        0.000000
+#&gt; Resources [of Solar PV]                       0.251827
+#&gt; Resources [of Solar Thermal]                  0.000000
+#&gt; Resources [of Wind]                           0.000000
+#&gt;                              Solar thermal [from Resources]
+#&gt; Resources [of Biofuels]                              0.0000
+#&gt; Resources [of Coal]                                  0.0000
+#&gt; Resources [of Crude Oil]                             0.0000
+#&gt; Resources [of Geothermal]                            0.0000
+#&gt; Resources [of Hydro]                                 0.0000
+#&gt; Resources [of Natural Gas]                           0.0000
+#&gt; Resources [of Nuclear]                               0.0000
+#&gt; Resources [of Solar PV]                              0.0000
+#&gt; Resources [of Solar Thermal]                       139.4591
+#&gt; Resources [of Wind]                                  0.0000
+#&gt;                              Wind [from Resources]
+#&gt; Resources [of Biofuels]                     0.0000
+#&gt; Resources [of Coal]                         0.0000
+#&gt; Resources [of Crude Oil]                    0.0000
+#&gt; Resources [of Geothermal]                   0.0000
+#&gt; Resources [of Hydro]                        0.0000
+#&gt; Resources [of Natural Gas]                  0.0000
+#&gt; Resources [of Nuclear]                      0.0000
+#&gt; Resources [of Solar PV]                     0.0000
+#&gt; Resources [of Solar Thermal]                0.0000
+#&gt; Resources [of Wind]                       571.2088
 #&gt; attr(,&quot;rowtype&quot;)
 #&gt; [1] &quot;Industry&quot;
 #&gt; attr(,&quot;coltype&quot;)
@@ -6557,35 +6556,33 @@ transformation industries in the economy. The next bit of code grabs the
 <strong>U</strong> matrix in the second row (2011).</p>
 <pre class="r"><code>df$U[[2]]
 #&gt;                                                           Coal mines
-#&gt; Coal &amp; coal products                                             0.0
-#&gt; Coal &amp; coal products [from Resources]                       258721.2
-#&gt; Final electricity                                                0.0
-#&gt; Geothermal                                                       0.0
-#&gt; Geothermal [from Resources]                                      0.0
-#&gt; Gross final electricity                                          0.0
-#&gt; Hydro                                                            0.0
-#&gt; Hydro [from Resources]                                           0.0
-#&gt; Natural gas                                                      0.0
-#&gt; Natural gas [from Resources]                                     0.0
-#&gt; Non-specified primary biofuels and waste                         0.0
-#&gt; Non-specified primary biofuels and waste [from Resources]        0.0
-#&gt; Nuclear                                                          0.0
-#&gt; Nuclear [from Resources]                                         0.0
-#&gt; Oil &amp; oil products                                               0.0
-#&gt; Oil &amp; oil products [from Resources]                              0.0
-#&gt; Solar photovoltaics                                              0.0
-#&gt; Solar photovoltaics [from Resources]                             0.0
-#&gt; Solar thermal                                                    0.0
-#&gt; Solar thermal [from Resources]                                   0.0
-#&gt; Wind                                                             0.0
-#&gt; Wind [from Resources]                                            0.0
-#&gt;                                                           Commercial indoor electric lamps
-#&gt; Coal &amp; coal products                                                                  0.00
-#&gt; Coal &amp; coal products [from Resources]                                                 0.00
-#&gt; Final electricity                                                                 12338.62
+#&gt; Coal &amp; coal products (if no detail)                            0.000
+#&gt; Coal &amp; Coal products [from Resources]                     258721.207
+#&gt; Electricity                                                 1596.832
+#&gt; Geothermal                                                     0.000
+#&gt; Geothermal [from Resources]                                    0.000
+#&gt; Hydro                                                          0.000
+#&gt; Hydro [from Resources]                                         0.000
+#&gt; Natural gas                                                    0.000
+#&gt; Natural gas [from Resources]                                   0.000
+#&gt; Non-specified primary biofuels and waste                       0.000
+#&gt; Non-specified primary biofuels and waste [from Resources]      0.000
+#&gt; Nuclear                                                        0.000
+#&gt; Nuclear [from Resources]                                       0.000
+#&gt; Oil &amp; oil products (if no detail)                              0.000
+#&gt; Oil &amp; oil products [from Resources]                            0.000
+#&gt; Solar photovoltaics                                            0.000
+#&gt; Solar PV [from Resources]                                      0.000
+#&gt; Solar thermal                                                  0.000
+#&gt; Solar thermal [from Resources]                                 0.000
+#&gt; Wind                                                           0.000
+#&gt; Wind [from Resources]                                          0.000
+#&gt;                                                           Commercial_indoor_electric_lamps
+#&gt; Coal &amp; coal products (if no detail)                                                   0.00
+#&gt; Coal &amp; Coal products [from Resources]                                                 0.00
+#&gt; Electricity                                                                       12338.62
 #&gt; Geothermal                                                                            0.00
 #&gt; Geothermal [from Resources]                                                           0.00
-#&gt; Gross final electricity                                                               0.00
 #&gt; Hydro                                                                                 0.00
 #&gt; Hydro [from Resources]                                                                0.00
 #&gt; Natural gas                                                                           0.00
@@ -6594,21 +6591,20 @@ transformation industries in the economy. The next bit of code grabs the
 #&gt; Non-specified primary biofuels and waste [from Resources]                             0.00
 #&gt; Nuclear                                                                               0.00
 #&gt; Nuclear [from Resources]                                                              0.00
-#&gt; Oil &amp; oil products                                                                    0.00
+#&gt; Oil &amp; oil products (if no detail)                                                     0.00
 #&gt; Oil &amp; oil products [from Resources]                                                   0.00
 #&gt; Solar photovoltaics                                                                   0.00
-#&gt; Solar photovoltaics [from Resources]                                                  0.00
+#&gt; Solar PV [from Resources]                                                             0.00
 #&gt; Solar thermal                                                                         0.00
 #&gt; Solar thermal [from Resources]                                                        0.00
 #&gt; Wind                                                                                  0.00
 #&gt; Wind [from Resources]                                                                 0.00
-#&gt;                                                           Electric arc furnaces
-#&gt; Coal &amp; coal products                                                          0
-#&gt; Coal &amp; coal products [from Resources]                                         0
-#&gt; Final electricity                                                        142295
+#&gt;                                                           Electric_arc_furnaces
+#&gt; Coal &amp; coal products (if no detail)                                           0
+#&gt; Coal &amp; Coal products [from Resources]                                         0
+#&gt; Electricity                                                              142295
 #&gt; Geothermal                                                                    0
 #&gt; Geothermal [from Resources]                                                   0
-#&gt; Gross final electricity                                                       0
 #&gt; Hydro                                                                         0
 #&gt; Hydro [from Resources]                                                        0
 #&gt; Natural gas                                                                   0
@@ -6617,182 +6613,240 @@ transformation industries in the economy. The next bit of code grabs the
 #&gt; Non-specified primary biofuels and waste [from Resources]                     0
 #&gt; Nuclear                                                                       0
 #&gt; Nuclear [from Resources]                                                      0
-#&gt; Oil &amp; oil products                                                            0
+#&gt; Oil &amp; oil products (if no detail)                                             0
 #&gt; Oil &amp; oil products [from Resources]                                           0
 #&gt; Solar photovoltaics                                                           0
-#&gt; Solar photovoltaics [from Resources]                                          0
+#&gt; Solar PV [from Resources]                                                     0
 #&gt; Solar thermal                                                                 0
 #&gt; Solar thermal [from Resources]                                                0
 #&gt; Wind                                                                          0
 #&gt; Wind [from Resources]                                                         0
-#&gt;                                                           Electronics (if no detail)
-#&gt; Coal &amp; coal products                                                           0.000
-#&gt; Coal &amp; coal products [from Resources]                                          0.000
-#&gt; Final electricity                                                           3002.373
-#&gt; Geothermal                                                                     0.000
-#&gt; Geothermal [from Resources]                                                    0.000
-#&gt; Gross final electricity                                                        0.000
-#&gt; Hydro                                                                          0.000
-#&gt; Hydro [from Resources]                                                         0.000
-#&gt; Natural gas                                                                    0.000
-#&gt; Natural gas [from Resources]                                                   0.000
-#&gt; Non-specified primary biofuels and waste                                       0.000
-#&gt; Non-specified primary biofuels and waste [from Resources]                      0.000
-#&gt; Nuclear                                                                        0.000
-#&gt; Nuclear [from Resources]                                                       0.000
-#&gt; Oil &amp; oil products                                                             0.000
-#&gt; Oil &amp; oil products [from Resources]                                            0.000
-#&gt; Solar photovoltaics                                                            0.000
-#&gt; Solar photovoltaics [from Resources]                                           0.000
-#&gt; Solar thermal                                                                  0.000
-#&gt; Solar thermal [from Resources]                                                 0.000
-#&gt; Wind                                                                           0.000
-#&gt; Wind [from Resources]                                                          0.000
 #&gt;                                                           Gas extraction
-#&gt; Coal &amp; coal products                                                0.00
-#&gt; Coal &amp; coal products [from Resources]                               0.00
-#&gt; Final electricity                                                   0.00
-#&gt; Geothermal                                                          0.00
-#&gt; Geothermal [from Resources]                                         0.00
-#&gt; Gross final electricity                                             0.00
-#&gt; Hydro                                                               0.00
-#&gt; Hydro [from Resources]                                              0.00
-#&gt; Natural gas                                                         0.00
-#&gt; Natural gas [from Resources]                                    91096.79
-#&gt; Non-specified primary biofuels and waste                            0.00
-#&gt; Non-specified primary biofuels and waste [from Resources]           0.00
-#&gt; Nuclear                                                             0.00
-#&gt; Nuclear [from Resources]                                            0.00
-#&gt; Oil &amp; oil products                                                  0.00
-#&gt; Oil &amp; oil products [from Resources]                                 0.00
-#&gt; Solar photovoltaics                                                 0.00
-#&gt; Solar photovoltaics [from Resources]                                0.00
-#&gt; Solar thermal                                                       0.00
-#&gt; Solar thermal [from Resources]                                      0.00
-#&gt; Wind                                                                0.00
-#&gt; Wind [from Resources]                                               0.00
-#&gt;                                                           Geothermal - Plant
-#&gt; Coal &amp; coal products                                                   0.000
-#&gt; Coal &amp; coal products [from Resources]                                  0.000
-#&gt; Final electricity                                                      0.000
-#&gt; Geothermal                                                             0.000
-#&gt; Geothermal [from Resources]                                         5082.086
-#&gt; Gross final electricity                                                0.000
-#&gt; Hydro                                                                  0.000
-#&gt; Hydro [from Resources]                                                 0.000
-#&gt; Natural gas                                                            0.000
-#&gt; Natural gas [from Resources]                                           0.000
-#&gt; Non-specified primary biofuels and waste                               0.000
-#&gt; Non-specified primary biofuels and waste [from Resources]              0.000
-#&gt; Nuclear                                                                0.000
-#&gt; Nuclear [from Resources]                                               0.000
-#&gt; Oil &amp; oil products                                                     0.000
-#&gt; Oil &amp; oil products [from Resources]                                    0.000
-#&gt; Solar photovoltaics                                                    0.000
-#&gt; Solar photovoltaics [from Resources]                                   0.000
-#&gt; Solar thermal                                                          0.000
-#&gt; Solar thermal [from Resources]                                         0.000
-#&gt; Wind                                                                   0.000
-#&gt; Wind [from Resources]                                                  0.000
-#&gt;                                                           Hydro - Dam   Losses
-#&gt; Coal &amp; coal products                                             0.00      0.0
-#&gt; Coal &amp; coal products [from Resources]                            0.00      0.0
-#&gt; Final electricity                                                0.00      0.0
-#&gt; Geothermal                                                       0.00      0.0
-#&gt; Geothermal [from Resources]                                      0.00      0.0
-#&gt; Gross final electricity                                          0.00 210299.6
-#&gt; Hydro                                                            0.00      0.0
-#&gt; Hydro [from Resources]                                       16821.74      0.0
-#&gt; Natural gas                                                      0.00      0.0
-#&gt; Natural gas [from Resources]                                     0.00      0.0
-#&gt; Non-specified primary biofuels and waste                         0.00      0.0
-#&gt; Non-specified primary biofuels and waste [from Resources]        0.00      0.0
-#&gt; Nuclear                                                          0.00      0.0
-#&gt; Nuclear [from Resources]                                         0.00      0.0
-#&gt; Oil &amp; oil products                                               0.00      0.0
-#&gt; Oil &amp; oil products [from Resources]                              0.00      0.0
-#&gt; Solar photovoltaics                                              0.00      0.0
-#&gt; Solar photovoltaics [from Resources]                             0.00      0.0
-#&gt; Solar thermal                                                    0.00      0.0
-#&gt; Solar thermal [from Resources]                                   0.00      0.0
-#&gt; Wind                                                             0.00      0.0
-#&gt; Wind [from Resources]                                            0.00      0.0
+#&gt; Coal &amp; coal products (if no detail)                               0.0000
+#&gt; Coal &amp; Coal products [from Resources]                             0.0000
+#&gt; Electricity                                                     840.8999
+#&gt; Geothermal                                                        0.0000
+#&gt; Geothermal [from Resources]                                       0.0000
+#&gt; Hydro                                                             0.0000
+#&gt; Hydro [from Resources]                                            0.0000
+#&gt; Natural gas                                                       0.0000
+#&gt; Natural gas [from Resources]                                  91096.7921
+#&gt; Non-specified primary biofuels and waste                          0.0000
+#&gt; Non-specified primary biofuels and waste [from Resources]         0.0000
+#&gt; Nuclear                                                           0.0000
+#&gt; Nuclear [from Resources]                                          0.0000
+#&gt; Oil &amp; oil products (if no detail)                                 0.0000
+#&gt; Oil &amp; oil products [from Resources]                               0.0000
+#&gt; Solar photovoltaics                                               0.0000
+#&gt; Solar PV [from Resources]                                         0.0000
+#&gt; Solar thermal                                                     0.0000
+#&gt; Solar thermal [from Resources]                                    0.0000
+#&gt; Wind                                                              0.0000
+#&gt; Wind [from Resources]                                             0.0000
 #&gt;                                                           Main activity producer electricity plants
-#&gt; Coal &amp; coal products                                                                   258721.20728
-#&gt; Coal &amp; coal products [from Resources]                                                       0.00000
-#&gt; Final electricity                                                                           0.00000
+#&gt; Coal &amp; coal products (if no detail)                                                    258721.20728
+#&gt; Coal &amp; Coal products [from Resources]                                                       0.00000
+#&gt; Electricity                                                                             11742.24691
 #&gt; Geothermal                                                                               5082.08624
 #&gt; Geothermal [from Resources]                                                                 0.00000
-#&gt; Gross final electricity                                                                     0.00000
 #&gt; Hydro                                                                                   16821.74367
 #&gt; Hydro [from Resources]                                                                      0.00000
 #&gt; Natural gas                                                                             91096.79206
 #&gt; Natural gas [from Resources]                                                                0.00000
 #&gt; Non-specified primary biofuels and waste                                                 7081.94713
 #&gt; Non-specified primary biofuels and waste [from Resources]                                   0.00000
-#&gt; Nuclear                                                                                130891.37607
+#&gt; Nuclear                                                                                     0.00000
 #&gt; Nuclear [from Resources]                                                                    0.00000
-#&gt; Oil &amp; oil products                                                                       3935.70339
+#&gt; Oil &amp; oil products (if no detail)                                                        3935.70339
 #&gt; Oil &amp; oil products [from Resources]                                                         0.00000
 #&gt; Solar photovoltaics                                                                        49.16761
-#&gt; Solar photovoltaics [from Resources]                                                        0.00000
+#&gt; Solar PV [from Resources]                                                                   0.00000
 #&gt; Solar thermal                                                                             114.70986
 #&gt; Solar thermal [from Resources]                                                              0.00000
 #&gt; Wind                                                                                     6352.24699
 #&gt; Wind [from Resources]                                                                       0.00000
-#&gt;                                                           Non-specified primary biofuels and waste - Plant
-#&gt; Coal &amp; coal products                                                                                 0.000
-#&gt; Coal &amp; coal products [from Resources]                                                                0.000
-#&gt; Final electricity                                                                                    0.000
-#&gt; Geothermal                                                                                           0.000
-#&gt; Geothermal [from Resources]                                                                          0.000
-#&gt; Gross final electricity                                                                              0.000
-#&gt; Hydro                                                                                                0.000
-#&gt; Hydro [from Resources]                                                                               0.000
-#&gt; Natural gas                                                                                          0.000
-#&gt; Natural gas [from Resources]                                                                         0.000
-#&gt; Non-specified primary biofuels and waste                                                             0.000
-#&gt; Non-specified primary biofuels and waste [from Resources]                                         7081.947
-#&gt; Nuclear                                                                                              0.000
-#&gt; Nuclear [from Resources]                                                                             0.000
-#&gt; Oil &amp; oil products                                                                                   0.000
-#&gt; Oil &amp; oil products [from Resources]                                                                  0.000
-#&gt; Solar photovoltaics                                                                                  0.000
-#&gt; Solar photovoltaics [from Resources]                                                                 0.000
-#&gt; Solar thermal                                                                                        0.000
-#&gt; Solar thermal [from Resources]                                                                       0.000
-#&gt; Wind                                                                                                 0.000
-#&gt; Wind [from Resources]                                                                                0.000
-#&gt;                                                           Nuclear - Plant
-#&gt; Coal &amp; coal products                                                  0.0
-#&gt; Coal &amp; coal products [from Resources]                                 0.0
-#&gt; Final electricity                                                     0.0
-#&gt; Geothermal                                                            0.0
-#&gt; Geothermal [from Resources]                                           0.0
-#&gt; Gross final electricity                                               0.0
-#&gt; Hydro                                                                 0.0
-#&gt; Hydro [from Resources]                                                0.0
-#&gt; Natural gas                                                           0.0
-#&gt; Natural gas [from Resources]                                          0.0
-#&gt; Non-specified primary biofuels and waste                              0.0
-#&gt; Non-specified primary biofuels and waste [from Resources]             0.0
-#&gt; Nuclear                                                               0.0
-#&gt; Nuclear [from Resources]                                         130891.4
-#&gt; Oil &amp; oil products                                                    0.0
-#&gt; Oil &amp; oil products [from Resources]                                   0.0
-#&gt; Solar photovoltaics                                                   0.0
-#&gt; Solar photovoltaics [from Resources]                                  0.0
-#&gt; Solar thermal                                                         0.0
-#&gt; Solar thermal [from Resources]                                        0.0
-#&gt; Wind                                                                  0.0
-#&gt; Wind [from Resources]                                                 0.0
+#&gt;                                                           Manufacture [of Geothermal]
+#&gt; Coal &amp; coal products (if no detail)                                             0.000
+#&gt; Coal &amp; Coal products [from Resources]                                           0.000
+#&gt; Electricity                                                                     0.000
+#&gt; Geothermal                                                                      0.000
+#&gt; Geothermal [from Resources]                                                  5082.086
+#&gt; Hydro                                                                           0.000
+#&gt; Hydro [from Resources]                                                          0.000
+#&gt; Natural gas                                                                     0.000
+#&gt; Natural gas [from Resources]                                                    0.000
+#&gt; Non-specified primary biofuels and waste                                        0.000
+#&gt; Non-specified primary biofuels and waste [from Resources]                       0.000
+#&gt; Nuclear                                                                         0.000
+#&gt; Nuclear [from Resources]                                                        0.000
+#&gt; Oil &amp; oil products (if no detail)                                               0.000
+#&gt; Oil &amp; oil products [from Resources]                                             0.000
+#&gt; Solar photovoltaics                                                             0.000
+#&gt; Solar PV [from Resources]                                                       0.000
+#&gt; Solar thermal                                                                   0.000
+#&gt; Solar thermal [from Resources]                                                  0.000
+#&gt; Wind                                                                            0.000
+#&gt; Wind [from Resources]                                                           0.000
+#&gt;                                                           Manufacture [of Hydro]
+#&gt; Coal &amp; coal products (if no detail)                                       0.0000
+#&gt; Coal &amp; Coal products [from Resources]                                     0.0000
+#&gt; Electricity                                                             276.3391
+#&gt; Geothermal                                                                0.0000
+#&gt; Geothermal [from Resources]                                               0.0000
+#&gt; Hydro                                                                     0.0000
+#&gt; Hydro [from Resources]                                                16821.7437
+#&gt; Natural gas                                                               0.0000
+#&gt; Natural gas [from Resources]                                              0.0000
+#&gt; Non-specified primary biofuels and waste                                  0.0000
+#&gt; Non-specified primary biofuels and waste [from Resources]                 0.0000
+#&gt; Nuclear                                                                   0.0000
+#&gt; Nuclear [from Resources]                                                  0.0000
+#&gt; Oil &amp; oil products (if no detail)                                         0.0000
+#&gt; Oil &amp; oil products [from Resources]                                       0.0000
+#&gt; Solar photovoltaics                                                       0.0000
+#&gt; Solar PV [from Resources]                                                 0.0000
+#&gt; Solar thermal                                                             0.0000
+#&gt; Solar thermal [from Resources]                                            0.0000
+#&gt; Wind                                                                      0.0000
+#&gt; Wind [from Resources]                                                     0.0000
+#&gt;                                                           Manufacture [of Non-specified primary biofuels and waste]
+#&gt; Coal &amp; coal products (if no detail)                                                                           0.000
+#&gt; Coal &amp; Coal products [from Resources]                                                                         0.000
+#&gt; Electricity                                                                                                   0.000
+#&gt; Geothermal                                                                                                    0.000
+#&gt; Geothermal [from Resources]                                                                                   0.000
+#&gt; Hydro                                                                                                         0.000
+#&gt; Hydro [from Resources]                                                                                        0.000
+#&gt; Natural gas                                                                                                   0.000
+#&gt; Natural gas [from Resources]                                                                                  0.000
+#&gt; Non-specified primary biofuels and waste                                                                      0.000
+#&gt; Non-specified primary biofuels and waste [from Resources]                                                  7081.947
+#&gt; Nuclear                                                                                                       0.000
+#&gt; Nuclear [from Resources]                                                                                      0.000
+#&gt; Oil &amp; oil products (if no detail)                                                                             0.000
+#&gt; Oil &amp; oil products [from Resources]                                                                           0.000
+#&gt; Solar photovoltaics                                                                                           0.000
+#&gt; Solar PV [from Resources]                                                                                     0.000
+#&gt; Solar thermal                                                                                                 0.000
+#&gt; Solar thermal [from Resources]                                                                                0.000
+#&gt; Wind                                                                                                          0.000
+#&gt; Wind [from Resources]                                                                                         0.000
+#&gt;                                                           Manufacture [of Nuclear]
+#&gt; Coal &amp; coal products (if no detail)                                            0.0
+#&gt; Coal &amp; Coal products [from Resources]                                          0.0
+#&gt; Electricity                                                                    0.0
+#&gt; Geothermal                                                                     0.0
+#&gt; Geothermal [from Resources]                                                    0.0
+#&gt; Hydro                                                                          0.0
+#&gt; Hydro [from Resources]                                                         0.0
+#&gt; Natural gas                                                                    0.0
+#&gt; Natural gas [from Resources]                                                   0.0
+#&gt; Non-specified primary biofuels and waste                                       0.0
+#&gt; Non-specified primary biofuels and waste [from Resources]                      0.0
+#&gt; Nuclear                                                                        0.0
+#&gt; Nuclear [from Resources]                                                  130891.4
+#&gt; Oil &amp; oil products (if no detail)                                              0.0
+#&gt; Oil &amp; oil products [from Resources]                                            0.0
+#&gt; Solar photovoltaics                                                            0.0
+#&gt; Solar PV [from Resources]                                                      0.0
+#&gt; Solar thermal                                                                  0.0
+#&gt; Solar thermal [from Resources]                                                 0.0
+#&gt; Wind                                                                           0.0
+#&gt; Wind [from Resources]                                                          0.0
+#&gt;                                                           Manufacture [of Solar PV]
+#&gt; Coal &amp; coal products (if no detail)                                         0.00000
+#&gt; Coal &amp; Coal products [from Resources]                                       0.00000
+#&gt; Electricity                                                                 0.00000
+#&gt; Geothermal                                                                  0.00000
+#&gt; Geothermal [from Resources]                                                 0.00000
+#&gt; Hydro                                                                       0.00000
+#&gt; Hydro [from Resources]                                                      0.00000
+#&gt; Natural gas                                                                 0.00000
+#&gt; Natural gas [from Resources]                                                0.00000
+#&gt; Non-specified primary biofuels and waste                                    0.00000
+#&gt; Non-specified primary biofuels and waste [from Resources]                   0.00000
+#&gt; Nuclear                                                                     0.00000
+#&gt; Nuclear [from Resources]                                                    0.00000
+#&gt; Oil &amp; oil products (if no detail)                                           0.00000
+#&gt; Oil &amp; oil products [from Resources]                                         0.00000
+#&gt; Solar photovoltaics                                                         0.00000
+#&gt; Solar PV [from Resources]                                                  49.16761
+#&gt; Solar thermal                                                               0.00000
+#&gt; Solar thermal [from Resources]                                              0.00000
+#&gt; Wind                                                                        0.00000
+#&gt; Wind [from Resources]                                                       0.00000
+#&gt;                                                           Manufacture [of Solar thermal]
+#&gt; Coal &amp; coal products (if no detail)                                               0.0000
+#&gt; Coal &amp; Coal products [from Resources]                                             0.0000
+#&gt; Electricity                                                                       0.0000
+#&gt; Geothermal                                                                        0.0000
+#&gt; Geothermal [from Resources]                                                       0.0000
+#&gt; Hydro                                                                             0.0000
+#&gt; Hydro [from Resources]                                                            0.0000
+#&gt; Natural gas                                                                       0.0000
+#&gt; Natural gas [from Resources]                                                      0.0000
+#&gt; Non-specified primary biofuels and waste                                          0.0000
+#&gt; Non-specified primary biofuels and waste [from Resources]                         0.0000
+#&gt; Nuclear                                                                           0.0000
+#&gt; Nuclear [from Resources]                                                          0.0000
+#&gt; Oil &amp; oil products (if no detail)                                                 0.0000
+#&gt; Oil &amp; oil products [from Resources]                                               0.0000
+#&gt; Solar photovoltaics                                                               0.0000
+#&gt; Solar PV [from Resources]                                                         0.0000
+#&gt; Solar thermal                                                                     0.0000
+#&gt; Solar thermal [from Resources]                                                  114.7099
+#&gt; Wind                                                                              0.0000
+#&gt; Wind [from Resources]                                                             0.0000
+#&gt;                                                           Manufacture [of Wind]
+#&gt; Coal &amp; coal products (if no detail)                                       0.000
+#&gt; Coal &amp; Coal products [from Resources]                                     0.000
+#&gt; Electricity                                                               0.000
+#&gt; Geothermal                                                                0.000
+#&gt; Geothermal [from Resources]                                               0.000
+#&gt; Hydro                                                                     0.000
+#&gt; Hydro [from Resources]                                                    0.000
+#&gt; Natural gas                                                               0.000
+#&gt; Natural gas [from Resources]                                              0.000
+#&gt; Non-specified primary biofuels and waste                                  0.000
+#&gt; Non-specified primary biofuels and waste [from Resources]                 0.000
+#&gt; Nuclear                                                                   0.000
+#&gt; Nuclear [from Resources]                                                  0.000
+#&gt; Oil &amp; oil products (if no detail)                                         0.000
+#&gt; Oil &amp; oil products [from Resources]                                       0.000
+#&gt; Solar photovoltaics                                                       0.000
+#&gt; Solar PV [from Resources]                                                 0.000
+#&gt; Solar thermal                                                             0.000
+#&gt; Solar thermal [from Resources]                                            0.000
+#&gt; Wind                                                                      0.000
+#&gt; Wind [from Resources]                                                  6352.247
+#&gt;                                                           Nuclear industry
+#&gt; Coal &amp; coal products (if no detail)                                    0.0
+#&gt; Coal &amp; Coal products [from Resources]                                  0.0
+#&gt; Electricity                                                            0.0
+#&gt; Geothermal                                                             0.0
+#&gt; Geothermal [from Resources]                                            0.0
+#&gt; Hydro                                                                  0.0
+#&gt; Hydro [from Resources]                                                 0.0
+#&gt; Natural gas                                                            0.0
+#&gt; Natural gas [from Resources]                                           0.0
+#&gt; Non-specified primary biofuels and waste                               0.0
+#&gt; Non-specified primary biofuels and waste [from Resources]              0.0
+#&gt; Nuclear                                                           130891.4
+#&gt; Nuclear [from Resources]                                               0.0
+#&gt; Oil &amp; oil products (if no detail)                                      0.0
+#&gt; Oil &amp; oil products [from Resources]                                    0.0
+#&gt; Solar photovoltaics                                                    0.0
+#&gt; Solar PV [from Resources]                                              0.0
+#&gt; Solar thermal                                                          0.0
+#&gt; Solar thermal [from Resources]                                         0.0
+#&gt; Wind                                                                   0.0
+#&gt; Wind [from Resources]                                                  0.0
 #&gt;                                                           Oil extraction
-#&gt; Coal &amp; coal products                                               0.000
-#&gt; Coal &amp; coal products [from Resources]                              0.000
-#&gt; Final electricity                                                  0.000
+#&gt; Coal &amp; coal products (if no detail)                                0.000
+#&gt; Coal &amp; Coal products [from Resources]                              0.000
+#&gt; Electricity                                                     3704.877
 #&gt; Geothermal                                                         0.000
 #&gt; Geothermal [from Resources]                                        0.000
-#&gt; Gross final electricity                                            0.000
 #&gt; Hydro                                                              0.000
 #&gt; Hydro [from Resources]                                             0.000
 #&gt; Natural gas                                                        0.000
@@ -6801,21 +6855,20 @@ transformation industries in the economy. The next bit of code grabs the
 #&gt; Non-specified primary biofuels and waste [from Resources]          0.000
 #&gt; Nuclear                                                            0.000
 #&gt; Nuclear [from Resources]                                           0.000
-#&gt; Oil &amp; oil products                                                 0.000
+#&gt; Oil &amp; oil products (if no detail)                                  0.000
 #&gt; Oil &amp; oil products [from Resources]                             3935.703
 #&gt; Solar photovoltaics                                                0.000
-#&gt; Solar photovoltaics [from Resources]                               0.000
+#&gt; Solar PV [from Resources]                                          0.000
 #&gt; Solar thermal                                                      0.000
 #&gt; Solar thermal [from Resources]                                     0.000
 #&gt; Wind                                                               0.000
 #&gt; Wind [from Resources]                                              0.000
-#&gt;                                                           Room air conditioners
-#&gt; Coal &amp; coal products                                                       0.00
-#&gt; Coal &amp; coal products [from Resources]                                      0.00
-#&gt; Final electricity                                                      17277.25
+#&gt;                                                           Room_air_conditioners
+#&gt; Coal &amp; coal products (if no detail)                                        0.00
+#&gt; Coal &amp; Coal products [from Resources]                                      0.00
+#&gt; Electricity                                                            17277.25
 #&gt; Geothermal                                                                 0.00
 #&gt; Geothermal [from Resources]                                                0.00
-#&gt; Gross final electricity                                                    0.00
 #&gt; Hydro                                                                      0.00
 #&gt; Hydro [from Resources]                                                     0.00
 #&gt; Natural gas                                                                0.00
@@ -6824,83 +6877,36 @@ transformation industries in the economy. The next bit of code grabs the
 #&gt; Non-specified primary biofuels and waste [from Resources]                  0.00
 #&gt; Nuclear                                                                    0.00
 #&gt; Nuclear [from Resources]                                                   0.00
-#&gt; Oil &amp; oil products                                                         0.00
+#&gt; Oil &amp; oil products (if no detail)                                          0.00
 #&gt; Oil &amp; oil products [from Resources]                                        0.00
 #&gt; Solar photovoltaics                                                        0.00
-#&gt; Solar photovoltaics [from Resources]                                       0.00
+#&gt; Solar PV [from Resources]                                                  0.00
 #&gt; Solar thermal                                                              0.00
 #&gt; Solar thermal [from Resources]                                             0.00
 #&gt; Wind                                                                       0.00
 #&gt; Wind [from Resources]                                                      0.00
-#&gt;                                                           Solar photovoltaics - Plant
-#&gt; Coal &amp; coal products                                                          0.00000
-#&gt; Coal &amp; coal products [from Resources]                                         0.00000
-#&gt; Final electricity                                                             0.00000
-#&gt; Geothermal                                                                    0.00000
-#&gt; Geothermal [from Resources]                                                   0.00000
-#&gt; Gross final electricity                                                       0.00000
-#&gt; Hydro                                                                         0.00000
-#&gt; Hydro [from Resources]                                                        0.00000
-#&gt; Natural gas                                                                   0.00000
-#&gt; Natural gas [from Resources]                                                  0.00000
-#&gt; Non-specified primary biofuels and waste                                      0.00000
-#&gt; Non-specified primary biofuels and waste [from Resources]                     0.00000
-#&gt; Nuclear                                                                       0.00000
-#&gt; Nuclear [from Resources]                                                      0.00000
-#&gt; Oil &amp; oil products                                                            0.00000
-#&gt; Oil &amp; oil products [from Resources]                                           0.00000
-#&gt; Solar photovoltaics                                                           0.00000
-#&gt; Solar photovoltaics [from Resources]                                         49.16761
-#&gt; Solar thermal                                                                 0.00000
-#&gt; Solar thermal [from Resources]                                                0.00000
-#&gt; Wind                                                                          0.00000
-#&gt; Wind [from Resources]                                                         0.00000
-#&gt;                                                           Solar thermal - Plant
-#&gt; Coal &amp; coal products                                                     0.0000
-#&gt; Coal &amp; coal products [from Resources]                                    0.0000
-#&gt; Final electricity                                                        0.0000
-#&gt; Geothermal                                                               0.0000
-#&gt; Geothermal [from Resources]                                              0.0000
-#&gt; Gross final electricity                                                  0.0000
-#&gt; Hydro                                                                    0.0000
-#&gt; Hydro [from Resources]                                                   0.0000
-#&gt; Natural gas                                                              0.0000
-#&gt; Natural gas [from Resources]                                             0.0000
-#&gt; Non-specified primary biofuels and waste                                 0.0000
-#&gt; Non-specified primary biofuels and waste [from Resources]                0.0000
-#&gt; Nuclear                                                                  0.0000
-#&gt; Nuclear [from Resources]                                                 0.0000
-#&gt; Oil &amp; oil products                                                       0.0000
-#&gt; Oil &amp; oil products [from Resources]                                      0.0000
-#&gt; Solar photovoltaics                                                      0.0000
-#&gt; Solar photovoltaics [from Resources]                                     0.0000
-#&gt; Solar thermal                                                            0.0000
-#&gt; Solar thermal [from Resources]                                         114.7099
-#&gt; Wind                                                                     0.0000
-#&gt; Wind [from Resources]                                                    0.0000
-#&gt;                                                           Wind - Turbine
-#&gt; Coal &amp; coal products                                               0.000
-#&gt; Coal &amp; coal products [from Resources]                              0.000
-#&gt; Final electricity                                                  0.000
-#&gt; Geothermal                                                         0.000
-#&gt; Geothermal [from Resources]                                        0.000
-#&gt; Gross final electricity                                            0.000
-#&gt; Hydro                                                              0.000
-#&gt; Hydro [from Resources]                                             0.000
-#&gt; Natural gas                                                        0.000
-#&gt; Natural gas [from Resources]                                       0.000
-#&gt; Non-specified primary biofuels and waste                           0.000
-#&gt; Non-specified primary biofuels and waste [from Resources]          0.000
-#&gt; Nuclear                                                            0.000
-#&gt; Nuclear [from Resources]                                           0.000
-#&gt; Oil &amp; oil products                                                 0.000
-#&gt; Oil &amp; oil products [from Resources]                                0.000
-#&gt; Solar photovoltaics                                                0.000
-#&gt; Solar photovoltaics [from Resources]                               0.000
-#&gt; Solar thermal                                                      0.000
-#&gt; Solar thermal [from Resources]                                     0.000
-#&gt; Wind                                                               0.000
-#&gt; Wind [from Resources]                                           6352.247
+#&gt;                                                           Televisions
+#&gt; Coal &amp; coal products (if no detail)                             0.000
+#&gt; Coal &amp; Coal products [from Resources]                           0.000
+#&gt; Electricity                                                  3002.373
+#&gt; Geothermal                                                      0.000
+#&gt; Geothermal [from Resources]                                     0.000
+#&gt; Hydro                                                           0.000
+#&gt; Hydro [from Resources]                                          0.000
+#&gt; Natural gas                                                     0.000
+#&gt; Natural gas [from Resources]                                    0.000
+#&gt; Non-specified primary biofuels and waste                        0.000
+#&gt; Non-specified primary biofuels and waste [from Resources]       0.000
+#&gt; Nuclear                                                         0.000
+#&gt; Nuclear [from Resources]                                        0.000
+#&gt; Oil &amp; oil products (if no detail)                               0.000
+#&gt; Oil &amp; oil products [from Resources]                             0.000
+#&gt; Solar photovoltaics                                             0.000
+#&gt; Solar PV [from Resources]                                       0.000
+#&gt; Solar thermal                                                   0.000
+#&gt; Solar thermal [from Resources]                                  0.000
+#&gt; Wind                                                            0.000
+#&gt; Wind [from Resources]                                           0.000
 #&gt; attr(,&quot;rowtype&quot;)
 #&gt; [1] &quot;Product&quot;
 #&gt; attr(,&quot;coltype&quot;)
@@ -6909,150 +6915,210 @@ transformation industries in the economy. The next bit of code grabs the
 transformation industries in the economy. The next bit of code grabs the
 <strong>V</strong> matrix in the first row (2001).</p>
 <pre class="r"><code>df$V[[1]]
-#&gt;                                                  Coal &amp; coal products
-#&gt; Coal mines                                                   472747.9
-#&gt; Commercial indoor electric lamps                                  0.0
-#&gt; Electric arc furnaces                                             0.0
-#&gt; Electronics (if no detail)                                        0.0
-#&gt; Geothermal - Plant                                                0.0
-#&gt; Hydro - Dam                                                       0.0
-#&gt; Losses                                                            0.0
-#&gt; Main activity producer electricity plants                         0.0
-#&gt; Non-specified primary biofuels and waste - Plant                  0.0
-#&gt; Nuclear - Plant                                                   0.0
-#&gt; Oil and gas extraction                                            0.0
-#&gt; Room air conditioners                                             0.0
-#&gt; Solar photovoltaics - Plant                                       0.0
-#&gt; Solar thermal - Plant                                             0.0
-#&gt; Wind - Turbine                                                    0.0
-#&gt;                                                  Final electricity Geothermal
-#&gt; Coal mines                                                     0.0       0.00
-#&gt; Commercial indoor electric lamps                               0.0       0.00
-#&gt; Electric arc furnaces                                          0.0       0.00
-#&gt; Electronics (if no detail)                                     0.0       0.00
-#&gt; Geothermal - Plant                                             0.0   12025.09
-#&gt; Hydro - Dam                                                    0.0       0.00
-#&gt; Losses                                                    243169.2       0.00
-#&gt; Main activity producer electricity plants                      0.0       0.00
-#&gt; Non-specified primary biofuels and waste - Plant               0.0       0.00
-#&gt; Nuclear - Plant                                                0.0       0.00
-#&gt; Oil and gas extraction                                         0.0       0.00
-#&gt; Room air conditioners                                          0.0       0.00
-#&gt; Solar photovoltaics - Plant                                    0.0       0.00
-#&gt; Solar thermal - Plant                                          0.0       0.00
-#&gt; Wind - Turbine                                                 0.0       0.00
-#&gt;                                                  Gross final electricity
-#&gt; Coal mines                                                           0.0
-#&gt; Commercial indoor electric lamps                                     0.0
-#&gt; Electric arc furnaces                                                0.0
-#&gt; Electronics (if no detail)                                           0.0
-#&gt; Geothermal - Plant                                                   0.0
-#&gt; Hydro - Dam                                                          0.0
-#&gt; Losses                                                               0.0
-#&gt; Main activity producer electricity plants                       293702.1
-#&gt; Non-specified primary biofuels and waste - Plant                     0.0
-#&gt; Nuclear - Plant                                                      0.0
-#&gt; Oil and gas extraction                                               0.0
-#&gt; Room air conditioners                                                0.0
-#&gt; Solar photovoltaics - Plant                                          0.0
-#&gt; Solar thermal - Plant                                                0.0
-#&gt; Wind - Turbine                                                       0.0
-#&gt;                                                  HTH.600.C    Hydro       IP
-#&gt; Coal mines                                             0.0     0.00  0.00000
-#&gt; Commercial indoor electric lamps                       0.0     0.00  0.00000
-#&gt; Electric arc furnaces                             115554.7     0.00  0.00000
-#&gt; Electronics (if no detail)                             0.0     0.00 39.50991
-#&gt; Geothermal - Plant                                     0.0     0.00  0.00000
-#&gt; Hydro - Dam                                            0.0 15526.71  0.00000
-#&gt; Losses                                                 0.0     0.00  0.00000
-#&gt; Main activity producer electricity plants              0.0     0.00  0.00000
-#&gt; Non-specified primary biofuels and waste - Plant       0.0     0.00  0.00000
-#&gt; Nuclear - Plant                                        0.0     0.00  0.00000
-#&gt; Oil and gas extraction                                 0.0     0.00  0.00000
-#&gt; Room air conditioners                                  0.0     0.00  0.00000
-#&gt; Solar photovoltaics - Plant                            0.0     0.00  0.00000
-#&gt; Solar thermal - Plant                                  0.0     0.00  0.00000
-#&gt; Wind - Turbine                                         0.0     0.00  0.00000
-#&gt;                                                         L LTC.20.C Natural gas
-#&gt; Coal mines                                          0.000    0.000        0.00
-#&gt; Commercial indoor electric lamps                 1633.527    0.000        0.00
-#&gt; Electric arc furnaces                               0.000    0.000        0.00
-#&gt; Electronics (if no detail)                          0.000    0.000        0.00
-#&gt; Geothermal - Plant                                  0.000    0.000        0.00
-#&gt; Hydro - Dam                                         0.000    0.000        0.00
-#&gt; Losses                                              0.000    0.000        0.00
-#&gt; Main activity producer electricity plants           0.000    0.000        0.00
-#&gt; Non-specified primary biofuels and waste - Plant    0.000    0.000        0.00
-#&gt; Nuclear - Plant                                     0.000    0.000        0.00
-#&gt; Oil and gas extraction                              0.000    0.000    94116.48
-#&gt; Room air conditioners                               0.000 1055.801        0.00
-#&gt; Solar photovoltaics - Plant                         0.000    0.000        0.00
-#&gt; Solar thermal - Plant                               0.000    0.000        0.00
-#&gt; Wind - Turbine                                      0.000    0.000        0.00
-#&gt;                                                  Non-specified primary biofuels and waste
-#&gt; Coal mines                                                                          0.000
-#&gt; Commercial indoor electric lamps                                                    0.000
-#&gt; Electric arc furnaces                                                               0.000
-#&gt; Electronics (if no detail)                                                          0.000
-#&gt; Geothermal - Plant                                                                  0.000
-#&gt; Hydro - Dam                                                                         0.000
-#&gt; Losses                                                                              0.000
-#&gt; Main activity producer electricity plants                                           0.000
-#&gt; Non-specified primary biofuels and waste - Plant                                 8735.566
-#&gt; Nuclear - Plant                                                                     0.000
-#&gt; Oil and gas extraction                                                              0.000
-#&gt; Room air conditioners                                                               0.000
-#&gt; Solar photovoltaics - Plant                                                         0.000
-#&gt; Solar thermal - Plant                                                               0.000
-#&gt; Wind - Turbine                                                                      0.000
-#&gt;                                                  Nuclear Oil &amp; oil products
-#&gt; Coal mines                                             0               0.00
-#&gt; Commercial indoor electric lamps                       0               0.00
-#&gt; Electric arc furnaces                                  0               0.00
-#&gt; Electronics (if no detail)                             0               0.00
-#&gt; Geothermal - Plant                                     0               0.00
-#&gt; Hydro - Dam                                            0               0.00
-#&gt; Losses                                                 0               0.00
-#&gt; Main activity producer electricity plants              0               0.00
-#&gt; Non-specified primary biofuels and waste - Plant       0               0.00
-#&gt; Nuclear - Plant                                   201579               0.00
-#&gt; Oil and gas extraction                                 0           27006.85
-#&gt; Room air conditioners                                  0               0.00
-#&gt; Solar photovoltaics - Plant                            0               0.00
-#&gt; Solar thermal - Plant                                  0               0.00
-#&gt; Wind - Turbine                                         0               0.00
-#&gt;                                                  Solar photovoltaics
-#&gt; Coal mines                                                  0.000000
-#&gt; Commercial indoor electric lamps                            0.000000
-#&gt; Electric arc furnaces                                       0.000000
-#&gt; Electronics (if no detail)                                  0.000000
-#&gt; Geothermal - Plant                                          0.000000
-#&gt; Hydro - Dam                                                 0.000000
-#&gt; Losses                                                      0.000000
-#&gt; Main activity producer electricity plants                   0.000000
-#&gt; Non-specified primary biofuels and waste - Plant            0.000000
-#&gt; Nuclear - Plant                                             0.000000
-#&gt; Oil and gas extraction                                      0.000000
-#&gt; Room air conditioners                                       0.000000
-#&gt; Solar photovoltaics - Plant                                 0.251827
-#&gt; Solar thermal - Plant                                       0.000000
-#&gt; Wind - Turbine                                              0.000000
-#&gt;                                                  Solar thermal     Wind
-#&gt; Coal mines                                              0.0000   0.0000
-#&gt; Commercial indoor electric lamps                        0.0000   0.0000
-#&gt; Electric arc furnaces                                   0.0000   0.0000
-#&gt; Electronics (if no detail)                              0.0000   0.0000
-#&gt; Geothermal - Plant                                      0.0000   0.0000
-#&gt; Hydro - Dam                                             0.0000   0.0000
-#&gt; Losses                                                  0.0000   0.0000
-#&gt; Main activity producer electricity plants               0.0000   0.0000
-#&gt; Non-specified primary biofuels and waste - Plant        0.0000   0.0000
-#&gt; Nuclear - Plant                                         0.0000   0.0000
-#&gt; Oil and gas extraction                                  0.0000   0.0000
-#&gt; Room air conditioners                                   0.0000   0.0000
-#&gt; Solar photovoltaics - Plant                             0.0000   0.0000
-#&gt; Solar thermal - Plant                                 139.4591   0.0000
-#&gt; Wind - Turbine                                          0.0000 571.2088
+#&gt;                                                           Coal &amp; coal products (if no detail)
+#&gt; Coal mines                                                                           472747.9
+#&gt; Commercial_indoor_electric_lamps                                                          0.0
+#&gt; Electric_arc_furnaces                                                                     0.0
+#&gt; Electronics (if no more detail)                                                           0.0
+#&gt; Gas extraction                                                                            0.0
+#&gt; Main activity producer electricity plants                                                 0.0
+#&gt; Manufacture [of Geothermal]                                                               0.0
+#&gt; Manufacture [of Hydro]                                                                    0.0
+#&gt; Manufacture [of Non-specified primary biofuels and waste]                                 0.0
+#&gt; Manufacture [of Nuclear]                                                                  0.0
+#&gt; Manufacture [of Solar PV]                                                                 0.0
+#&gt; Manufacture [of Solar thermal]                                                            0.0
+#&gt; Manufacture [of Wind]                                                                     0.0
+#&gt; Nuclear industry                                                                          0.0
+#&gt; Oil extraction                                                                            0.0
+#&gt; Room_air_conditioners                                                                     0.0
+#&gt;                                                           Electricity
+#&gt; Coal mines                                                       0.00
+#&gt; Commercial_indoor_electric_lamps                                 0.00
+#&gt; Electric_arc_furnaces                                            0.00
+#&gt; Electronics (if no more detail)                                  0.00
+#&gt; Gas extraction                                                   0.00
+#&gt; Main activity producer electricity plants                   227181.03
+#&gt; Manufacture [of Geothermal]                                      0.00
+#&gt; Manufacture [of Hydro]                                           0.00
+#&gt; Manufacture [of Non-specified primary biofuels and waste]        0.00
+#&gt; Manufacture [of Nuclear]                                         0.00
+#&gt; Manufacture [of Solar PV]                                        0.00
+#&gt; Manufacture [of Solar thermal]                                   0.00
+#&gt; Manufacture [of Wind]                                            0.00
+#&gt; Nuclear industry                                             66521.06
+#&gt; Oil extraction                                                   0.00
+#&gt; Room_air_conditioners                                            0.00
+#&gt;                                                           Geothermal HTH.600.C
+#&gt; Coal mines                                                      0.00       0.0
+#&gt; Commercial_indoor_electric_lamps                                0.00       0.0
+#&gt; Electric_arc_furnaces                                           0.00  115554.7
+#&gt; Electronics (if no more detail)                                 0.00       0.0
+#&gt; Gas extraction                                                  0.00       0.0
+#&gt; Main activity producer electricity plants                       0.00       0.0
+#&gt; Manufacture [of Geothermal]                                 12025.09       0.0
+#&gt; Manufacture [of Hydro]                                          0.00       0.0
+#&gt; Manufacture [of Non-specified primary biofuels and waste]       0.00       0.0
+#&gt; Manufacture [of Nuclear]                                        0.00       0.0
+#&gt; Manufacture [of Solar PV]                                       0.00       0.0
+#&gt; Manufacture [of Solar thermal]                                  0.00       0.0
+#&gt; Manufacture [of Wind]                                           0.00       0.0
+#&gt; Nuclear industry                                                0.00       0.0
+#&gt; Oil extraction                                                  0.00       0.0
+#&gt; Room_air_conditioners                                           0.00       0.0
+#&gt;                                                              Hydro       IP
+#&gt; Coal mines                                                    0.00  0.00000
+#&gt; Commercial_indoor_electric_lamps                              0.00  0.00000
+#&gt; Electric_arc_furnaces                                         0.00  0.00000
+#&gt; Electronics (if no more detail)                               0.00 39.50991
+#&gt; Gas extraction                                                0.00  0.00000
+#&gt; Main activity producer electricity plants                     0.00  0.00000
+#&gt; Manufacture [of Geothermal]                                   0.00  0.00000
+#&gt; Manufacture [of Hydro]                                    15526.71  0.00000
+#&gt; Manufacture [of Non-specified primary biofuels and waste]     0.00  0.00000
+#&gt; Manufacture [of Nuclear]                                      0.00  0.00000
+#&gt; Manufacture [of Solar PV]                                     0.00  0.00000
+#&gt; Manufacture [of Solar thermal]                                0.00  0.00000
+#&gt; Manufacture [of Wind]                                         0.00  0.00000
+#&gt; Nuclear industry                                              0.00  0.00000
+#&gt; Oil extraction                                                0.00  0.00000
+#&gt; Room_air_conditioners                                         0.00  0.00000
+#&gt;                                                                  L LTC.20.C
+#&gt; Coal mines                                                   0.000    0.000
+#&gt; Commercial_indoor_electric_lamps                          1633.527    0.000
+#&gt; Electric_arc_furnaces                                        0.000    0.000
+#&gt; Electronics (if no more detail)                              0.000    0.000
+#&gt; Gas extraction                                               0.000    0.000
+#&gt; Main activity producer electricity plants                    0.000    0.000
+#&gt; Manufacture [of Geothermal]                                  0.000    0.000
+#&gt; Manufacture [of Hydro]                                       0.000    0.000
+#&gt; Manufacture [of Non-specified primary biofuels and waste]    0.000    0.000
+#&gt; Manufacture [of Nuclear]                                     0.000    0.000
+#&gt; Manufacture [of Solar PV]                                    0.000    0.000
+#&gt; Manufacture [of Solar thermal]                               0.000    0.000
+#&gt; Manufacture [of Wind]                                        0.000    0.000
+#&gt; Nuclear industry                                             0.000    0.000
+#&gt; Oil extraction                                               0.000    0.000
+#&gt; Room_air_conditioners                                        0.000 1055.801
+#&gt;                                                           Natural gas
+#&gt; Coal mines                                                       0.00
+#&gt; Commercial_indoor_electric_lamps                                 0.00
+#&gt; Electric_arc_furnaces                                            0.00
+#&gt; Electronics (if no more detail)                                  0.00
+#&gt; Gas extraction                                               94116.48
+#&gt; Main activity producer electricity plants                        0.00
+#&gt; Manufacture [of Geothermal]                                      0.00
+#&gt; Manufacture [of Hydro]                                           0.00
+#&gt; Manufacture [of Non-specified primary biofuels and waste]        0.00
+#&gt; Manufacture [of Nuclear]                                         0.00
+#&gt; Manufacture [of Solar PV]                                        0.00
+#&gt; Manufacture [of Solar thermal]                                   0.00
+#&gt; Manufacture [of Wind]                                            0.00
+#&gt; Nuclear industry                                                 0.00
+#&gt; Oil extraction                                                   0.00
+#&gt; Room_air_conditioners                                            0.00
+#&gt;                                                           Non-specified primary biofuels and waste
+#&gt; Coal mines                                                                                   0.000
+#&gt; Commercial_indoor_electric_lamps                                                             0.000
+#&gt; Electric_arc_furnaces                                                                        0.000
+#&gt; Electronics (if no more detail)                                                              0.000
+#&gt; Gas extraction                                                                               0.000
+#&gt; Main activity producer electricity plants                                                    0.000
+#&gt; Manufacture [of Geothermal]                                                                  0.000
+#&gt; Manufacture [of Hydro]                                                                       0.000
+#&gt; Manufacture [of Non-specified primary biofuels and waste]                                 8735.566
+#&gt; Manufacture [of Nuclear]                                                                     0.000
+#&gt; Manufacture [of Solar PV]                                                                    0.000
+#&gt; Manufacture [of Solar thermal]                                                               0.000
+#&gt; Manufacture [of Wind]                                                                        0.000
+#&gt; Nuclear industry                                                                             0.000
+#&gt; Oil extraction                                                                               0.000
+#&gt; Room_air_conditioners                                                                        0.000
+#&gt;                                                           Nuclear
+#&gt; Coal mines                                                      0
+#&gt; Commercial_indoor_electric_lamps                                0
+#&gt; Electric_arc_furnaces                                           0
+#&gt; Electronics (if no more detail)                                 0
+#&gt; Gas extraction                                                  0
+#&gt; Main activity producer electricity plants                       0
+#&gt; Manufacture [of Geothermal]                                     0
+#&gt; Manufacture [of Hydro]                                          0
+#&gt; Manufacture [of Non-specified primary biofuels and waste]       0
+#&gt; Manufacture [of Nuclear]                                   201579
+#&gt; Manufacture [of Solar PV]                                       0
+#&gt; Manufacture [of Solar thermal]                                  0
+#&gt; Manufacture [of Wind]                                           0
+#&gt; Nuclear industry                                                0
+#&gt; Oil extraction                                                  0
+#&gt; Room_air_conditioners                                           0
+#&gt;                                                           Oil &amp; oil products (if no detail)
+#&gt; Coal mines                                                                             0.00
+#&gt; Commercial_indoor_electric_lamps                                                       0.00
+#&gt; Electric_arc_furnaces                                                                  0.00
+#&gt; Electronics (if no more detail)                                                        0.00
+#&gt; Gas extraction                                                                         0.00
+#&gt; Main activity producer electricity plants                                              0.00
+#&gt; Manufacture [of Geothermal]                                                            0.00
+#&gt; Manufacture [of Hydro]                                                                 0.00
+#&gt; Manufacture [of Non-specified primary biofuels and waste]                              0.00
+#&gt; Manufacture [of Nuclear]                                                               0.00
+#&gt; Manufacture [of Solar PV]                                                              0.00
+#&gt; Manufacture [of Solar thermal]                                                         0.00
+#&gt; Manufacture [of Wind]                                                                  0.00
+#&gt; Nuclear industry                                                                       0.00
+#&gt; Oil extraction                                                                     27006.85
+#&gt; Room_air_conditioners                                                                  0.00
+#&gt;                                                           Solar photovoltaics
+#&gt; Coal mines                                                           0.000000
+#&gt; Commercial_indoor_electric_lamps                                     0.000000
+#&gt; Electric_arc_furnaces                                                0.000000
+#&gt; Electronics (if no more detail)                                      0.000000
+#&gt; Gas extraction                                                       0.000000
+#&gt; Main activity producer electricity plants                            0.000000
+#&gt; Manufacture [of Geothermal]                                          0.000000
+#&gt; Manufacture [of Hydro]                                               0.000000
+#&gt; Manufacture [of Non-specified primary biofuels and waste]            0.000000
+#&gt; Manufacture [of Nuclear]                                             0.000000
+#&gt; Manufacture [of Solar PV]                                            0.251827
+#&gt; Manufacture [of Solar thermal]                                       0.000000
+#&gt; Manufacture [of Wind]                                                0.000000
+#&gt; Nuclear industry                                                     0.000000
+#&gt; Oil extraction                                                       0.000000
+#&gt; Room_air_conditioners                                                0.000000
+#&gt;                                                           Solar thermal
+#&gt; Coal mines                                                       0.0000
+#&gt; Commercial_indoor_electric_lamps                                 0.0000
+#&gt; Electric_arc_furnaces                                            0.0000
+#&gt; Electronics (if no more detail)                                  0.0000
+#&gt; Gas extraction                                                   0.0000
+#&gt; Main activity producer electricity plants                        0.0000
+#&gt; Manufacture [of Geothermal]                                      0.0000
+#&gt; Manufacture [of Hydro]                                           0.0000
+#&gt; Manufacture [of Non-specified primary biofuels and waste]        0.0000
+#&gt; Manufacture [of Nuclear]                                         0.0000
+#&gt; Manufacture [of Solar PV]                                        0.0000
+#&gt; Manufacture [of Solar thermal]                                 139.4591
+#&gt; Manufacture [of Wind]                                            0.0000
+#&gt; Nuclear industry                                                 0.0000
+#&gt; Oil extraction                                                   0.0000
+#&gt; Room_air_conditioners                                            0.0000
+#&gt;                                                               Wind
+#&gt; Coal mines                                                  0.0000
+#&gt; Commercial_indoor_electric_lamps                            0.0000
+#&gt; Electric_arc_furnaces                                       0.0000
+#&gt; Electronics (if no more detail)                             0.0000
+#&gt; Gas extraction                                              0.0000
+#&gt; Main activity producer electricity plants                   0.0000
+#&gt; Manufacture [of Geothermal]                                 0.0000
+#&gt; Manufacture [of Hydro]                                      0.0000
+#&gt; Manufacture [of Non-specified primary biofuels and waste]   0.0000
+#&gt; Manufacture [of Nuclear]                                    0.0000
+#&gt; Manufacture [of Solar PV]                                   0.0000
+#&gt; Manufacture [of Solar thermal]                              0.0000
+#&gt; Manufacture [of Wind]                                     571.2088
+#&gt; Nuclear industry                                            0.0000
+#&gt; Oil extraction                                              0.0000
+#&gt; Room_air_conditioners                                       0.0000
 #&gt; attr(,&quot;rowtype&quot;)
 #&gt; [1] &quot;Industry&quot;
 #&gt; attr(,&quot;coltype&quot;)
@@ -7063,11 +7129,12 @@ energy. If we had more than the “Iron and steel” sector, the
 of code grabs the <strong>Y</strong> matrix in the second row
 (2011).</p>
 <pre class="r"><code>df$Y[[2]]
-#&gt;           Iron and steel
-#&gt; HTH.600.C    81737.53724
-#&gt; IP              51.83652
-#&gt; L             1423.48384
-#&gt; LTC.20.C      1085.88515
+#&gt;             Iron and Steel   Losses
+#&gt; Electricity        0.00000 17225.21
+#&gt; HTH.600.C      81737.53724     0.00
+#&gt; IP                51.83652     0.00
+#&gt; L               1423.48384     0.00
+#&gt; LTC.20.C        1085.88515     0.00
 #&gt; attr(,&quot;rowtype&quot;)
 #&gt; [1] &quot;Product&quot;
 #&gt; attr(,&quot;coltype&quot;)
@@ -7086,26 +7153,27 @@ diagram from each row of the data frame.</p>
 <pre class="r"><code>sankeys &lt;- df |&gt; 
   Recca::make_sankey()
 sankeys
-#&gt; # A tibble: 2 × 9
-#&gt;    Year Country Energy.type R               U        V        Y        S_units 
+#&gt; # A tibble: 2 × 12
+#&gt;    Year Country Energy.type R               U        V        Y        U_feed  
 #&gt;   &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;       &lt;list&gt;          &lt;list&gt;   &lt;list&gt;   &lt;list&gt;   &lt;list&gt;  
 #&gt; 1  2001 USA     E           &lt;dbl [10 × 10]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt;
 #&gt; 2  2011 USA     E           &lt;dbl [10 × 10]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt; &lt;dbl[…]&gt;
-#&gt; # ℹ 1 more variable: Sankey &lt;list&gt;</code></pre>
+#&gt; # ℹ 4 more variables: U_EIOU &lt;list&gt;, r_EIOU &lt;list&gt;, S_units &lt;list&gt;,
+#&gt; #   Sankey &lt;list&gt;</code></pre>
 <p>Here is the Sankey diagram for the first row (2001).</p>
 <pre class="r"><code>sankeys |&gt; 
   dplyr::filter(Year == 2001) |&gt; 
   magrittr::extract2(&quot;Sankey&quot;) |&gt; 
   magrittr::extract2(1)</code></pre>
-<div class="sankeyNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-1f3f3fb8857648a83afb" style="width:672px;height:480px;"></div>
-<script type="application/json" data-for="htmlwidget-1f3f3fb8857648a83afb">{"x":{"links":{"source":[0,1,2,2,2,2,3,4,5,5,6,7,8,9,10,11,12,13,14,15,16,17,12,18,19,20,21,22,23,24,10,6,9,25,26,2,5,27,11],"target":[5,0,10,6,9,11,5,3,25,2,28,5,7,28,28,28,5,26,5,14,5,16,5,27,5,19,5,21,5,23,29,29,29,29,29,29,29,29,29],"value":[472747.88519267,472747.88519267,16213.2958167707,202233.748990661,3880.03215120397,20842.1246901647,12025.0937171416,12025.0937171416,25142.5805881754,268559.507430512,115554.745361494,15526.7057126386,15526.7057126386,39.5099092826688,1633.52672991856,1055.80056438893,94116.4801155484,94116.4801155484,8735.56584651533,8735.56584651533,201578.968048853,201578.968048853,27006.8505510943,27006.8505510943,0.251827015456157,0.251827015456157,139.459068153251,139.459068153251,571.208775170576,571.208775170576,14579.7690868521,86679.0036291672,3840.5222419213,25142.5805881754,94116.4801155484,25390.3057817115,538746.380836113,27006.8505510943,19786.3241257758]},"nodes":{"name":["Coal mines","Resources [of Coal & coal products]","Losses","Geothermal - Plant","Resources [of Geothermal]","Main activity producer electricity plants","Electric arc furnaces","Hydro - Dam","Resources [of Hydro]","Electronics (if no detail)","Commercial indoor electric lamps","Room air conditioners","Oil and gas extraction","Resources [of Natural Gas]","Non-specified primary biofuels and waste - Plant","Resources [of Biofuels]","Nuclear - Plant","Resources [of Nuclear]","Resources [of Oil & oil products]","Solar photovoltaics - Plant","Resources [of Solar PV]","Solar thermal - Plant","Resources [of Solar Thermal]","Wind - Turbine","Resources [of Wind]","Energy Industry own use","Gas extraction","Oil extraction","Iron and steel","Waste"],"group":["Coal mines","Resources [of Coal & coal products]","Losses","Geothermal - Plant","Resources [of Geothermal]","Main activity producer electricity plants","Electric arc furnaces","Hydro - Dam","Resources [of Hydro]","Electronics (if no detail)","Commercial indoor electric lamps","Room air conditioners","Oil and gas extraction","Resources [of Natural Gas]","Non-specified primary biofuels and waste - Plant","Resources [of Biofuels]","Nuclear - Plant","Resources [of Nuclear]","Resources [of Oil & oil products]","Solar photovoltaics - Plant","Resources [of Solar PV]","Solar thermal - Plant","Resources [of Solar Thermal]","Wind - Turbine","Resources [of Wind]","Energy Industry own use","Gas extraction","Oil extraction","Iron and steel","Waste"]},"options":{"NodeID":"Node","NodeGroup":"Node","LinkGroup":null,"colourScale":"d3.scaleOrdinal(d3.schemeCategory20);","fontSize":7,"fontFamily":null,"nodeWidth":15,"nodePadding":10,"units":"","margin":{"top":null,"right":null,"bottom":null,"left":null},"iterations":32,"sinksRight":true}},"evals":[],"jsHooks":[]}</script>
+<div class="sankeyNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-2eeebe4a6bed896267ec" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-2eeebe4a6bed896267ec">{"x":{"links":{"source":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,24,24,24,24,24,24,24,24,24,25,26,1,8,4,10,25,5,26,16,9,27],"target":[1,25,25,2,28,25,5,28,28,28,25,10,25,12,26,14,25,16,19,25,25,20,25,22,1,8,4,10,25,5,16,9,27,29,24,24,30,30,30,30,30,30,30,30,30,30],"value":[472747.88519267,472747.88519267,12025.0937171416,12025.0937171416,115554.745361494,15526.7057126386,15526.7057126386,39.5099092826688,1633.52672991856,1055.80056438893,94116.4801155484,94116.4801155484,8735.56584651533,8735.56584651533,201578.968048853,201578.968048853,27006.8505510943,27006.8505510943,0.251827015456157,0.251827015456157,139.459068153251,139.459068153251,571.208775170576,571.208775170576,2519.21974402258,16213.2958167707,202233.748990661,1062.10848029018,15187.4736334681,562.017592244477,5811.76113815001,20842.1246901647,3880.03215120397,25390.3057817115,227181.028556519,66521.0594621675,2519.21974402258,14579.7690868521,86679.0036291672,1062.10848029018,418875.945882896,562.017592244477,135057.908586685,5811.76113815001,19786.3241257758,3880.03215120397]},"nodes":{"name":["Resources [of Coal]","Coal mines","Manufacture [of Geothermal]","Resources [of Geothermal]","Electric_arc_furnaces","Manufacture [of Hydro]","Resources [of Hydro]","Electronics (if no more detail)","Commercial_indoor_electric_lamps","Room_air_conditioners","Gas extraction","Resources [of Natural Gas]","Manufacture [of Non-specified primary biofuels and waste]","Resources [of Biofuels]","Manufacture [of Nuclear]","Resources [of Nuclear]","Oil extraction","Resources [of Crude Oil]","Resources [of Solar PV]","Manufacture [of Solar PV]","Manufacture [of Solar thermal]","Resources [of Solar Thermal]","Manufacture [of Wind]","Resources [of Wind]","Electricity","Main activity producer electricity plants","Nuclear industry","Televisions","Iron and Steel","Losses","Waste"],"group":["Resources [of Coal]","Coal mines","Manufacture [of Geothermal]","Resources [of Geothermal]","Electric_arc_furnaces","Manufacture [of Hydro]","Resources [of Hydro]","Electronics (if no more detail)","Commercial_indoor_electric_lamps","Room_air_conditioners","Gas extraction","Resources [of Natural Gas]","Manufacture [of Non-specified primary biofuels and waste]","Resources [of Biofuels]","Manufacture [of Nuclear]","Resources [of Nuclear]","Oil extraction","Resources [of Crude Oil]","Resources [of Solar PV]","Manufacture [of Solar PV]","Manufacture [of Solar thermal]","Resources [of Solar Thermal]","Manufacture [of Wind]","Resources [of Wind]","Electricity","Main activity producer electricity plants","Nuclear industry","Televisions","Iron and Steel","Losses","Waste"]},"options":{"NodeID":"Node","NodeGroup":"Node","LinkGroup":null,"colourScale":"d3.scaleOrdinal(d3.schemeCategory20);","fontSize":7,"fontFamily":null,"nodeWidth":15,"nodePadding":10,"units":"","margin":{"top":null,"right":null,"bottom":null,"left":null},"iterations":32,"sinksRight":true}},"evals":[],"jsHooks":[]}</script>
 <p>Here is the Sankey diagram for the second row (2011).</p>
 <pre class="r"><code>sankeys |&gt; 
   dplyr::filter(Year == 2011) |&gt; 
   magrittr::extract2(&quot;Sankey&quot;) |&gt; 
   magrittr::extract2(1)</code></pre>
-<div class="sankeyNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-451650c81bc643ebc826" style="width:672px;height:480px;"></div>
-<script type="application/json" data-for="htmlwidget-451650c81bc643ebc826">{"x":{"links":{"source":[0,1,2,2,2,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,12,18,19,20,21,22,23,24,10,6,25,26,2,5,27,11],"target":[5,0,10,6,25,11,5,3,2,28,5,7,28,28,28,5,26,5,14,5,16,5,27,5,19,5,21,5,23,29,29,29,29,29,29,29,29],"value":[258721.20727663,258721.20727663,12338.6232090358,142294.954964064,3002.37281127375,17277.2486556262,5082.08623828094,5082.08623828094,210299.605543187,81737.5372370896,16821.7436737728,16821.7436737728,51.836523280945,1423.48384399073,1085.88515272159,91096.7920599876,91096.7920599876,7081.9471263614,7081.9471263614,130891.376073986,130891.376073986,3935.70339415197,3935.70339415197,49.1676086884055,49.1676086884055,114.709864867646,114.709864867646,6352.24698586623,6352.24698586623,10915.1393650451,60557.4177269746,3002.37281127375,91096.7920599876,35386.4059031866,309847.374759407,3935.70339415197,16191.3635029046]},"nodes":{"name":["Coal mines","Resources [of Coal]","Losses","Geothermal - Plant","Resources [of Geothermal]","Main activity producer electricity plants","Electric arc furnaces","Hydro - Dam","Resources [of Hydro]","Computers","Commercial indoor electric lamps","Room air conditioners","Oil and gas extraction","Resources [of Natural Gas]","Non-specified primary biofuels and waste - Plant","Resources [of Biofuels]","Nuclear - Plant","Resources [of Nuclear]","Resources [of Crude oil]","Solar photovoltaics - Plant","Resources [of Solar PV]","Solar thermal - Plant","Resources [of Solar thermal]","Wind - Turbine","Resources [of Wind]","Electronics (if no detail)","Gas extraction","Oil extraction","Iron and steel","Waste"],"group":["Coal mines","Resources [of Coal]","Losses","Geothermal - Plant","Resources [of Geothermal]","Main activity producer electricity plants","Electric arc furnaces","Hydro - Dam","Resources [of Hydro]","Computers","Commercial indoor electric lamps","Room air conditioners","Oil and gas extraction","Resources [of Natural Gas]","Non-specified primary biofuels and waste - Plant","Resources [of Biofuels]","Nuclear - Plant","Resources [of Nuclear]","Resources [of Crude oil]","Solar photovoltaics - Plant","Resources [of Solar PV]","Solar thermal - Plant","Resources [of Solar thermal]","Wind - Turbine","Resources [of Wind]","Electronics (if no detail)","Gas extraction","Oil extraction","Iron and steel","Waste"]},"options":{"NodeID":"Node","NodeGroup":"Node","LinkGroup":null,"colourScale":"d3.scaleOrdinal(d3.schemeCategory20);","fontSize":7,"fontFamily":null,"nodeWidth":15,"nodePadding":10,"units":"","margin":{"top":null,"right":null,"bottom":null,"left":null},"iterations":32,"sinksRight":true}},"evals":[],"jsHooks":[]}</script>
+<div class="sankeyNetwork html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-ad802877c0bc98077189" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-ad802877c0bc98077189">{"x":{"links":{"source":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,24,24,24,24,24,24,24,24,24,25,26,1,8,4,10,25,5,26,16,9,27],"target":[1,25,25,2,28,25,5,28,28,28,25,10,25,12,26,14,25,16,19,25,25,20,25,22,1,8,4,10,25,5,16,9,27,29,24,24,30,30,30,30,30,30,30,30,30,30],"value":[258721.20727663,258721.20727663,5082.08623828094,5082.08623828094,81737.5372370896,16821.7436737728,16821.7436737728,51.836523280945,1423.48384399073,1085.88515272159,91096.7920599876,91096.7920599876,7081.9471263614,7081.9471263614,130891.376073986,130891.376073986,3935.70339415197,3935.70339415197,49.1676086884055,49.1676086884055,114.709864867646,114.709864867646,6352.24698586623,6352.24698586623,1596.83160754845,12338.6232090358,142294.954964064,840.899917312687,11742.246909126,276.339130965925,3704.87655250132,17277.2486556262,3002.37281127375,17225.2117857322,167105.451441859,43194.1541013276,1596.83160754845,10915.1393650451,60557.4177269746,840.899917312687,233892.399695875,276.339130965925,87697.2219726586,3704.87655250132,16191.3635029046,3002.37281127375]},"nodes":{"name":["Resources [of Coal]","Coal mines","Manufacture [of Geothermal]","Resources [of Geothermal]","Electric_arc_furnaces","Manufacture [of Hydro]","Resources [of Hydro]","Electronics (if no more detail)","Commercial_indoor_electric_lamps","Room_air_conditioners","Gas extraction","Resources [of Natural Gas]","Manufacture [of Non-specified primary biofuels and waste]","Resources [of Biofuels]","Manufacture [of Nuclear]","Resources [of Nuclear]","Oil extraction","Resources [of Crude Oil]","Resources [of Solar PV]","Manufacture [of Solar PV]","Manufacture [of Solar thermal]","Resources [of Solar Thermal]","Manufacture [of Wind]","Resources [of Wind]","Electricity","Main activity producer electricity plants","Nuclear industry","Televisions","Iron and Steel","Losses","Waste"],"group":["Resources [of Coal]","Coal mines","Manufacture [of Geothermal]","Resources [of Geothermal]","Electric_arc_furnaces","Manufacture [of Hydro]","Resources [of Hydro]","Electronics (if no more detail)","Commercial_indoor_electric_lamps","Room_air_conditioners","Gas extraction","Resources [of Natural Gas]","Manufacture [of Non-specified primary biofuels and waste]","Resources [of Biofuels]","Manufacture [of Nuclear]","Resources [of Nuclear]","Oil extraction","Resources [of Crude Oil]","Resources [of Solar PV]","Manufacture [of Solar PV]","Manufacture [of Solar thermal]","Resources [of Solar Thermal]","Manufacture [of Wind]","Resources [of Wind]","Electricity","Main activity producer electricity plants","Nuclear industry","Televisions","Iron and Steel","Losses","Waste"]},"options":{"NodeID":"Node","NodeGroup":"Node","LinkGroup":null,"colourScale":"d3.scaleOrdinal(d3.schemeCategory20);","fontSize":7,"fontFamily":null,"nodeWidth":15,"nodePadding":10,"units":"","margin":{"top":null,"right":null,"bottom":null,"left":null},"iterations":32,"sinksRight":true}},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="analysis" class="section level1">
 <h1>Analysis</h1>
@@ -7118,50 +7186,48 @@ Industries.</p>
 processing stage (Industry) in the energy conversion chain. Here are the
 efficiencies for 2001.</p>
 <pre class="r"><code>eta_i$eta_i[[1]]
-#&gt;                                                       eta_i
-#&gt; Coal mines                                       1.00000000
-#&gt; Commercial indoor electric lamps                 0.10075229
-#&gt; Electric arc furnaces                            0.57139200
-#&gt; Electronics (if no detail)                       0.01018288
-#&gt; Energy Industry own use                          0.00000000
-#&gt; Gas extraction                                   0.00000000
-#&gt; Geothermal - Plant                               1.00000000
-#&gt; Hydro - Dam                                      1.00000000
-#&gt; Losses                                           0.90545743
-#&gt; Main activity producer electricity plants        0.35281714
-#&gt; Non-specified primary biofuels and waste - Plant 1.00000000
-#&gt; Nuclear - Plant                                  1.00000000
-#&gt; Oil and gas extraction                                  Inf
-#&gt; Oil extraction                                   0.00000000
-#&gt; Room air conditioners                            0.05065705
-#&gt; Solar photovoltaics - Plant                      1.00000000
-#&gt; Solar thermal - Plant                            1.00000000
-#&gt; Wind - Turbine                                   1.00000000
+#&gt;                                                                eta_i
+#&gt; Coal mines                                                0.99469936
+#&gt; Commercial_indoor_electric_lamps                          0.10075229
+#&gt; Electric_arc_furnaces                                     0.57139200
+#&gt; Electronics (if no more detail)                                  Inf
+#&gt; Gas extraction                                            0.98884089
+#&gt; Main activity producer electricity plants                 0.35164241
+#&gt; Manufacture [of Geothermal]                               1.00000000
+#&gt; Manufacture [of Hydro]                                    0.96506761
+#&gt; Manufacture [of Non-specified primary biofuels and waste] 1.00000000
+#&gt; Manufacture [of Nuclear]                                  1.00000000
+#&gt; Manufacture [of Solar PV]                                 1.00000000
+#&gt; Manufacture [of Solar thermal]                            1.00000000
+#&gt; Manufacture [of Wind]                                     1.00000000
+#&gt; Nuclear industry                                          0.33000000
+#&gt; Oil extraction                                            0.82291265
+#&gt; Room_air_conditioners                                     0.05065705
+#&gt; Televisions                                               0.00000000
 #&gt; attr(,&quot;rowtype&quot;)
 #&gt; [1] &quot;Industry&quot;
 #&gt; attr(,&quot;coltype&quot;)
 #&gt; [1] &quot;Product&quot;</code></pre>
 <p>And here are the efficiencies for 2011.</p>
 <pre class="r"><code>eta_i$eta_i[[2]]
-#&gt;                                                       eta_i
-#&gt; Coal mines                                       1.00000000
-#&gt; Commercial indoor electric lamps                 0.11536813
-#&gt; Computers                                               Inf
-#&gt; Electric arc furnaces                            0.57442330
-#&gt; Electronics (if no detail)                       0.00000000
-#&gt; Gas extraction                                   0.00000000
-#&gt; Geothermal - Plant                               1.00000000
-#&gt; Hydro - Dam                                      1.00000000
-#&gt; Losses                                           0.83173337
-#&gt; Main activity producer electricity plants        0.40430804
-#&gt; Non-specified primary biofuels and waste - Plant 1.00000000
-#&gt; Nuclear - Plant                                  1.00000000
-#&gt; Oil and gas extraction                                  Inf
-#&gt; Oil extraction                                   0.00000000
-#&gt; Room air conditioners                            0.06285058
-#&gt; Solar photovoltaics - Plant                      1.00000000
-#&gt; Solar thermal - Plant                            1.00000000
-#&gt; Wind - Turbine                                   1.00000000
+#&gt;                                                                eta_i
+#&gt; Coal mines                                                0.99386584
+#&gt; Commercial_indoor_electric_lamps                          0.11536813
+#&gt; Electric_arc_furnaces                                     0.57442330
+#&gt; Electronics (if no more detail)                                  Inf
+#&gt; Gas extraction                                            0.99085359
+#&gt; Main activity producer electricity plants                 0.41672406
+#&gt; Manufacture [of Geothermal]                               1.00000000
+#&gt; Manufacture [of Hydro]                                    0.98383800
+#&gt; Manufacture [of Non-specified primary biofuels and waste] 1.00000000
+#&gt; Manufacture [of Nuclear]                                  1.00000000
+#&gt; Manufacture [of Solar PV]                                 1.00000000
+#&gt; Manufacture [of Solar thermal]                            1.00000000
+#&gt; Manufacture [of Wind]                                     1.00000000
+#&gt; Nuclear industry                                          0.33000000
+#&gt; Oil extraction                                            0.51510532
+#&gt; Room_air_conditioners                                     0.06285058
+#&gt; Televisions                                               0.00000000
 #&gt; attr(,&quot;rowtype&quot;)
 #&gt; [1] &quot;Industry&quot;
 #&gt; attr(,&quot;coltype&quot;)
@@ -7177,30 +7243,27 @@ energy transformation industries.</p>
 </div>
 <div id="questions-and-comments" class="section level1">
 <h1>Questions and comments</h1>
-<ol style="list-style-type: decimal">
-<li>There is “Energy industry own use” of “Gross electricity”. Which
-part of the energy industry uses that electricity? We will want to route
-that electricity consumption to the actual machine.</li>
-<li>We need to synchronize the various “XXX - plant” machine names with
-the names of similar devices in the short run database.</li>
-<li>What is meant by “Electronics (if no detail)”? To my knowledge, that
-machine name is not present in the short run database.</li>
-<li>I think we’ll need to sort out “Wind”, “Wind [from Resources]”,
-“Wind - Turbine”, and “Main activity producer electricity plants”. I
-think we’re using those terms differently in the short run
-database.</li>
-<li>In particular “Wind - Turbine” making “Wind” doesn’t seem
-right.</li>
-<li>The “Losses” node seems wrong, as evidenced by the Sankey diagram.
-We need to figure that out.</li>
-<li>Efficiencies are a bit weird. “Losses” acts as an industry, which it
-should not be. “Gas extraction” and “Oil extraction” have an
-efficiencies of <code>0</code>, which is surprising. Several other
-Industries have efficiency of <code>1</code>, which needs to be
-investigated.</li>
-<li>The efficiency calculation is a good diagnostic. When we see
-problems with efficiency results, that indicates that we have not yet
-specified the matrices correctly.</li>
+<ol start="0" style="list-style-type: decimal">
+<li>Things are looking really good!</li>
+<li>The efficiency of “Electronics” is <code>INF</code>. And the Sankey
+diagrams show energy created by “Electronics” but no energy consumed by
+“Electronics”. That’s probably not what we want.</li>
+<li>“Commercial_indoor_electric_lamps”, “Electric_arc_furnaces”, and
+“Room_air_conditioners” have underscore characters (“_“) in their names.
+The Short-run database does not have underscore characters in names. So
+maybe remove those characters?</li>
+<li>Check the Excel file. You’ll find nicely formatted matrices in Excel
+format. Those may be helpful for debugging.</li>
+<li>Note that I added <strong>U_EIOU</strong> and
+<strong>U_feed</strong> matrices. <strong>U_EIOU</strong> is zero for
+now, but we can add energy industry own use later. Because
+<strong>U_EIOU</strong> is the <strong>0</strong> matrix,
+<strong>r_EIOU</strong> is also <strong>0</strong> (for now).</li>
+<li>I changed the name of the tab to be “Iron and steel”, assuming you
+will probably have other tabs in the future.</li>
+<li>As I advised in an earlier call, I would not divorce the file read
+by <code>R</code> from the raw data you used to create the data read by
+<code>R</code>.</li>
 </ol>
 </div>
 
