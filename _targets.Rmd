@@ -1,7 +1,7 @@
 ---
 title: "Long run database test"
 author: "Matthew Kuperus Heun"
-date: "27 Apr 2023"
+date: '`r format(Sys.time(), "%d %B %Y")`'
 output: html_document
 ---
 
@@ -70,6 +70,7 @@ iron_steel |>
   # Now make the S_units vectors
   IEATools::extract_S_units_from_tidy(matnames = "Matrix", e_dot = "Value")
 ```
+Then create RUVY matrices in a data frame.
 
 ```{targets ruvy_df, tar_simple = TRUE}
 iron_steel |> 
@@ -78,17 +79,24 @@ iron_steel |>
                                  rownames = "From", 
                                  colnames = "To",
                                  matvals = "Value",
-                                 matrix.class = "matrix") |> 
+                                 matrix_class = "matrix") |> 
   tidyr::pivot_wider(names_from = "Matrix", values_from = "Value") |> 
   dplyr::mutate(
     # Set row and column types
     R = R |> matsbyname::setrowtype("Industry") |> matsbyname::setcoltype("Product"), 
     U = U |> matsbyname::setrowtype("Product") |> matsbyname::setcoltype("Industry"), 
     V = V |> matsbyname::setrowtype("Industry") |> matsbyname::setcoltype("Product"), 
-    Y = Y |> matsbyname::setrowtype("Product") |> matsbyname::setcoltype("Industry")
+    Y = Y |> matsbyname::setrowtype("Product") |> matsbyname::setcoltype("Industry"), 
+    # Create other expected matrices
+    # The U_feed matrix is same as U
+    U_feed = U, 
+    # Create a U_EIOU matrix full of zeros but with same rows and columns as U
+    U_EIOU = matsbyname::hadamardproduct_byname(U, 0),
+    # Create an r_EIOU matrix, again full of zeroes
+    r_EIOU = U_EIOU
   ) |> 
   # Join with the S_units matrices
-  dplyr::left_join(s_units)
+  dplyr::left_join(s_units, by = c("Year", "Country", "Energy.type"))
 ```
 
 
@@ -117,7 +125,15 @@ df <- tar_read(ruvy_df)
 df
 ```
 
-Look at some of the matrices.
+We can dump the matrices to an Excel file for further interrogation.
+
+```{r}
+df |> 
+  Recca::write_ecc_to_excel("~/Desktop/IronAndSteelRUVYMatrices.xlsx", 
+                            overwrite_file = TRUE)
+```
+
+Look at some of the matrices here.
 
 The resource matrix (**R**) contains exogenous inputs to the energy conversion chain.
 Imports can also be included here for a single country.
@@ -189,6 +205,7 @@ sankeys |>
 ```
 
 
+
 # Analysis
 
 We can run all types of analyses after the data are in the RUVY format.
@@ -225,27 +242,22 @@ energy transformation industries.
 
 # Questions and comments
 
-(1) There is "Energy industry own use" of "Gross electricity". 
-    Which part of the energy industry uses that electricity?
-    We will want to route that electricity consumption
-    to the actual machine.
-(2) We need to synchronize the various "XXX - plant" machine names
-    with the names of similar devices in the short run database.
-(3) What is meant by "Electronics (if no detail)"? 
-    To my knowledge, 
-    that machine name is not present in the short run database.
-(4) I think we'll need to sort out "Wind", "Wind [from Resources]", 
-    "Wind - Turbine", and "Main activity producer electricity plants".
-    I think we're using those terms differently in the short run database.
-(5) In particular "Wind - Turbine" making "Wind" doesn't seem right.
-(6) The "Losses" node seems wrong, as evidenced by the Sankey diagram. 
-    We need to figure that out.
-(7) Efficiencies are a bit weird. 
-    "Losses" acts as an industry, which it should not be.
-    "Gas extraction" and "Oil extraction" have an efficiencies of `0`, which is surprising.
-    Several other Industries have efficiency of `1`, which needs to be investigated.
-(8) The efficiency calculation is a good diagnostic.
-    When we see problems with efficiency results, that indicates
-    that we have not yet specified the matrices correctly.
+(0) Things are looking really good!
+(1) The efficiency of "Electronics" is `INF`. And the Sankey diagrams
+    show energy created by "Electronics" but no energy consumed by "Electronics".
+    That's probably not what we want.
+(2) "Commercial_indoor_electric_lamps", "Electric_arc_furnaces", and 
+    "Room_air_conditioners" have underscore characters ("_") in their names.
+    The Short-run database does not have underscore characters in names.
+    So maybe remove those characters?
+(3) Check the Excel file.  You'll find nicely formatted matrices in Excel format.
+    Those may be helpful for debugging.
+(4) Note that I added **U_EIOU** and **U_feed** matrices. 
+    **U_EIOU** is zero for now, but we can add energy industry own use later.
+    Because **U_EIOU** is the **0** matrix, **r_EIOU** is also **0** (for now).
+(5) I changed the name of the tab to be "Iron and steel", assuming 
+    you will probably have other tabs in the future.
+(6) As I advised in an earlier call, I would not divorce the file read by `R`
+    from the raw data you used to create the data read by `R`.
 
     
